@@ -10,7 +10,48 @@ PluginProcessor::PluginProcessor()
 #endif
                                  .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-) {
+),
+          parameters(*this, nullptr, juce::Identifier("ZLTestParas"),
+                     {
+                             std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("filter_type", 1),
+                                                                          "Filter Type",
+                                                                          juce::StringArray{"FIR", "IIR"},
+                                                                          0),
+                             std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("output_band", 1),
+                                                                          "Output Band",
+                                                                          juce::StringArray{"Low", "Mid", "High",
+                                                                                            "All"},
+                                                                          0),
+                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("low_split", 1),
+                                                                         "Low Split",
+                                                                         juce::NormalisableRange<float>(100, 10000, 1),
+                                                                         240),
+                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("high_split", 1),
+                                                                         "High Split",
+                                                                         juce::NormalisableRange<float>(100, 10000, 1),
+                                                                         4800),
+                     }),
+          crossover(*this, 64), lrCrossover(*this) {
+    parameters.addParameterListener("filter_type", this);
+    parameters.addParameterListener("low_split", this);
+    parameters.addParameterListener("high_split", this);
+}
+
+void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {
+    if (parameterID == "low_split") {
+        crossover.setLowFreq(newValue);
+        lrCrossover.setLowFreq(newValue);
+    } else if (parameterID == "high_split") {
+        crossover.setHighFreq(newValue);
+        lrCrossover.setLowFreq(newValue);
+    } else if (parameterID == "filter_type") {
+        filterType.store(static_cast<size_t>(newValue));
+        if (filterType.load() == 0) {
+            setLatencySamples(crossover.getLatency());
+        } else {
+            setLatencySamples(0);
+        }
+    }
 }
 
 PluginProcessor::~PluginProcessor() {
@@ -73,9 +114,12 @@ void PluginProcessor::changeProgramName(int index, const juce::String &newName) 
 
 //==============================================================================
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
-    juce::ignoreUnused(sampleRate, samplesPerBlock);
+    auto channels = static_cast<juce::uint32> (juce::jmin(getMainBusNumInputChannels(),
+                                                          getMainBusNumOutputChannels()));
+    juce::dsp::ProcessSpec spec{sampleRate, static_cast<juce::uint32> (samplesPerBlock),
+                                channels};
+    crossover.prepare(spec);
+    lrCrossover.prepare(spec);
 }
 
 void PluginProcessor::releaseResources() {
@@ -90,8 +134,7 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
 #else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-        && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
     // This checks if the input layout matches the output layout
@@ -108,29 +151,30 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                    juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
 
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-        auto *channelData = buffer.getWritePointer(channel);
-        juce::ignoreUnused(channelData);
-        // ..do something to the data...
+    juce::dsp::AudioBlock<float> block(buffer);
+    auto outputBand = static_cast<size_t>(parameters.getRawParameterValue("output_band")->load());
+    if (filterType.load() == 0) {
+        crossover.split(block);
+        if (outputBand == 0) {
+            block.copyFrom(crossover.getLowBlock());
+        } else if (outputBand == 1) {
+            block.copyFrom(crossover.getMidBlock());
+        } else if (outputBand == 2) {
+            block.copyFrom(crossover.getHighBlock());
+        } else {
+            crossover.combine(block);
+        }
+    } else {
+        lrCrossover.split(block);
+        if (outputBand == 0) {
+            block.copyFrom(lrCrossover.getLowBlock());
+        } else if (outputBand == 1) {
+            block.copyFrom(lrCrossover.getMidBlock());
+        } else if (outputBand == 2) {
+            block.copyFrom(lrCrossover.getHighBlock());
+        } else {
+            lrCrossover.combine(block);
+        }
     }
 }
 
@@ -140,7 +184,8 @@ bool PluginProcessor::hasEditor() const {
 }
 
 juce::AudioProcessorEditor *PluginProcessor::createEditor() {
-    return new PluginEditor(*this);
+//    return new PluginEditor(*this);
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================

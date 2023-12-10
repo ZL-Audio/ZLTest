@@ -1,12 +1,14 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "crossover/fir_crossover.h"
+#include "crossover/lr_crossover.h"
 
 #if (MSVC)
 #include "ipps.h"
 #endif
 
-class PluginProcessor : public juce::AudioProcessor {
+class PluginProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener {
 public:
     PluginProcessor();
 
@@ -48,6 +50,12 @@ public:
 
     void setStateInformation(const void *data, int sizeInBytes) override;
 
+    void parameterChanged(const juce::String &parameterID, float newValue) override;
+
 private:
+    juce::AudioProcessorValueTreeState parameters;
+    std::atomic<size_t> filterType;
+    zl_crossover::FIRCrossover<float> crossover;
+    zl_crossover::LRCrossover<float> lrCrossover;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };

@@ -3,25 +3,9 @@
   <img src="docs/logo.svg" width="7.5%" />
 </p> -->
 
-# ZLTemplate
-![pluginval](<https://github.com/ZL-Audio/ZLSplit/actions/workflows/cmake_full_test.yml/badge.svg?branch=main>)
+# ZLTest
+![pluginval](<https://github.com/ZL-Audio/ZLTest/actions/workflows/cmake_full_test.yml/badge.svg?branch=main>)
 
-ZLTemplate is a template for building JUCE plugins (derived from [pamplejuce](https://github.com/sudara/pamplejuce)).
-
-<!-- <img src="Docs/screenshot.png" width=94%> -->
-<!-- 
-## Usage
-
-See the wiki for details.
-
-## Download
-
-See the releases for the latest version. 
-
-**Please NOTICE**:
-- the installer has **NOT** been notarized/EV certificated on macOS/Windows
-- the plugin has **NOT** been fully tested on DAWs
--->
 ## Build from Source
 
 0. `git clone` this repo
@@ -34,4 +18,4 @@ See the releases for the latest version.
 
 ## License
 
-ZLTemplate is licensed under GPLv3, as found in the [LICENSE](LICENSE) file.
+ZLTest is licensed under GPLv3, as found in the [LICENSE](LICENSE) file.

@@ -11,8 +11,8 @@ include(PamplejuceVersion)
 # This is the internal name of the project and the name of JUCE's shared code "target"
 # Note: This cannot have spaces (it may be 2023, but you can't have it all!)
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is DAWs display)
-set(PROJECT_NAME "ZLSplit")
-set(PLUGIN_CODE "Spli")
+set(PROJECT_NAME "ZLTest")
+set(PLUGIN_CODE "Test")
 
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs will display)
 # You can also just have it be the same thing as PROJECT_NAME
@@ -20,7 +20,7 @@ set(PLUGIN_CODE "Spli")
 # #  set(PROJECT_NAME "MyPlugin_v${MAJOR_VERSION}")
 # Doing so enables major versions to show up in IDEs and DAWs as separate plugins
 # allowing you to change parameters and behavior without breaking existing user projects
-set(PRODUCT_NAME "ZL Split")
+set(PRODUCT_NAME "ZL Test")
 
 # Change me! Used for the MacOS bundle name and Installers
 set(COMPANY_NAME "ZL")
@@ -123,6 +123,7 @@ target_compile_definitions(SharedCode
 
         # JucePlugin_Name is for some reason doesn't use the nicer PRODUCT_NAME
         PRODUCT_NAME_WITHOUT_VERSION="${PRODUCT_NAME}"
+        JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
         )
 
 # Link to any other modules you added (with juce_add_module) here!
