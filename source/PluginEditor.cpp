@@ -18,7 +18,7 @@ PluginEditor::~PluginEditor() {
 
 void PluginEditor::paint(juce::Graphics &g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-
+    juce::ignoreUnused(g);
 }
 
 void PluginEditor::resized() {

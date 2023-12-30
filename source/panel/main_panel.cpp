@@ -6,6 +6,7 @@
 
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p) : uiBase() {
+        juce::ignoreUnused(p);
         slider2 = std::make_unique<zlInterface::TwoValueRotarySliderComponent>("Freq", uiBase);
         addAndMakeVisible(*slider2);
         // button1 = std::make_unique<zlInterface::CompactButton>("B", uiBase);

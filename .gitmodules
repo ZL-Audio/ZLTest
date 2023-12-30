@@ -4,5 +4,5 @@
 	branch = master
 [submodule "modules/friz"]
 	path = modules/friz
-	url = https://github.com/chrhaase/animator
+	url = https://github.com/ZL-Audio/animator
 	branch = fix-warnings
