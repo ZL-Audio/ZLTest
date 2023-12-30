@@ -24,31 +24,37 @@ namespace zlInterface {
             bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 0.5f, {});
             bounds = uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.15f, {.flip = true});
             if (button.getToggleState()) {
-                bounds = uiBase.getShadowEllipseArea(bounds, uiBase.getFontSize() * 0.2f, {});
-                bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 0.05f,
-                                                  {.flip = true, .fit = false});
-                uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.5f, {});
+                bounds = uiBase.getShadowEllipseArea(bounds, uiBase.getFontSize() * 0.25f, {});
+                uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.5f, {
+                                                  .darkShadowColor = uiBase.getDarkShadowColor().
+                                                  withMultipliedAlpha(buttonDepth),
+                                                  .changeDark = true,
+                                                  .brightShadowColor = uiBase.getBrightShadowColor().
+                                                  withMultipliedAlpha(buttonDepth),
+                                                  .changeBright = true
+                                              });
             }
             if (editable.load()) {
                 auto textBound = button.getLocalBounds().toFloat();
                 if (button.getToggleState()) {
-                    textBound.removeFromTop(uiBase.getFontSize() * 0.0625f);
-                    shouldDrawButtonAsDown ? g.setColour(uiBase.getTextInactiveColor()) : g.setColour(uiBase.getTextColor());
+                    g.setColour(uiBase.getTextColor().withAlpha(0.5f + buttonDepth * 0.5f));
                 } else {
-                    textBound.removeFromBottom(uiBase.getFontSize() * 0.0625f);
-                    shouldDrawButtonAsDown ? g.setColour(uiBase.getTextColor()) : g.setColour(uiBase.getTextInactiveColor());
+                    g.setColour(uiBase.getTextColor().withAlpha(0.5f));
                 }
                 g.setFont(uiBase.getFontSize() * FontLarge);
                 g.drawText(button.getButtonText(), textBound.toNearestInt(), juce::Justification::centred);
             }
         }
 
-        inline void setEditable(bool f) {
-            editable.store(f);
-        }
+        inline void setEditable(bool f) { editable.store(f); }
+
+        inline float getDepth() { return buttonDepth.load(); }
+
+        inline void setDepth(float x) { buttonDepth = x; }
 
     private:
         std::atomic<bool> editable = true;
+        std::atomic<float> buttonDepth = 0.f;
 
         UIBase &uiBase;
     };

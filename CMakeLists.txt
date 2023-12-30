@@ -52,6 +52,7 @@ add_subdirectory(JUCE)
 
 # Add any other modules you want modules here, before the juce_add_plugin call
 # juce_add_module(modules/my_module)
+juce_add_module("${CMAKE_CURRENT_LIST_DIR}/modules/friz/Source/friz")
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
@@ -133,6 +134,7 @@ target_compile_definitions(SharedCode
 # This allows the JUCE plugin targets and the Tests target to link against it
 target_link_libraries(SharedCode
         INTERFACE
+        friz
         Assets
         juce_audio_utils
         juce_audio_processors

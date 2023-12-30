@@ -6,10 +6,10 @@
 
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p) : uiBase() {
-        // slider2 = std::make_unique<zlInterface::TwoValueRotarySliderComponent>("Freq", uiBase);
-        // addAndMakeVisible(*slider2);
-        button1 = std::make_unique<zlInterface::CompactButton>("B", uiBase);
-        addAndMakeVisible(*button1);
+        slider2 = std::make_unique<zlInterface::TwoValueRotarySliderComponent>("Freq", uiBase);
+        addAndMakeVisible(*slider2);
+        // button1 = std::make_unique<zlInterface::CompactButton>("B", uiBase);
+        // addAndMakeVisible(*button1);
     }
 
     MainPanel::~MainPanel(){
@@ -21,11 +21,11 @@ namespace zlPanel {
 
     void MainPanel::resized() {
         auto bound = getLocalBounds().toFloat();
-        auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 10;
+        auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
         uiBase.setFontSize(fontSize);
 
-        // slider2->setBounds(getLocalBounds());
-        button1->setBounds(getLocalBounds());
+        slider2->setBounds(getLocalBounds());
+        // button1->setBounds(getLocalBounds());
     }
 
 }

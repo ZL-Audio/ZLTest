@@ -6,6 +6,7 @@
 #define TWO_VALUE_ROTARY_SLIDER_COMPONENT_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <friz/friz.h>
 
 #include "../../interface_definitions.h"
 #include "first_rotary_slider_look_and_feel.h"
@@ -19,7 +20,7 @@ namespace zlInterface {
 
         ~TwoValueRotarySliderComponent() override;
 
-        void paintOverChildren(juce::Graphics &g) override;
+        // void paintOverChildren(juce::Graphics &g) override;
 
         void mouseUp(const juce::MouseEvent &event) override;
 
@@ -55,12 +56,16 @@ namespace zlInterface {
         FirstRotarySliderLookAndFeel slider1LAF;
         SecondRotarySliderLookAndFeel slider2LAF;
 
-        juce::Label label;
-        NameLookAndFeel nameLookAndFeel;
+        juce::Label label, label1, label2;
+        NameLookAndFeel labelLookAndFeel, labelLookAndFeel1, labelLookAndFeel2;
 
         std::atomic<bool> showSlider2 = true, mouseOver = false, editable = true;
 
-        juce::String getDisplayValue(double value);
+        friz::Animator animator;
+
+        static constexpr int animationId = 1;
+
+        juce::String getDisplayValue(juce::Slider &s);
     };
 }
 
