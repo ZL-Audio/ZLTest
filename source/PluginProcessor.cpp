@@ -150,32 +150,33 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
 void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                    juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
+    juce::ignoreUnused(buffer);
 
-    juce::dsp::AudioBlock<float> block(buffer);
-    auto outputBand = static_cast<size_t>(parameters.getRawParameterValue("output_band")->load());
-    if (filterType.load() == 0) {
-        crossover.split(block);
-        if (outputBand == 0) {
-            block.copyFrom(crossover.getLowBlock());
-        } else if (outputBand == 1) {
-            block.copyFrom(crossover.getMidBlock());
-        } else if (outputBand == 2) {
-            block.copyFrom(crossover.getHighBlock());
-        } else {
-            crossover.combine(block);
-        }
-    } else {
-        lrCrossover.split(block);
-        if (outputBand == 0) {
-            block.copyFrom(lrCrossover.getLowBlock());
-        } else if (outputBand == 1) {
-            block.copyFrom(lrCrossover.getMidBlock());
-        } else if (outputBand == 2) {
-            block.copyFrom(lrCrossover.getHighBlock());
-        } else {
-            lrCrossover.combine(block);
-        }
-    }
+//    juce::dsp::AudioBlock<float> block(buffer);
+//    auto outputBand = static_cast<size_t>(parameters.getRawParameterValue("output_band")->load());
+//    if (filterType.load() == 0) {
+//        crossover.split(block);
+//        if (outputBand == 0) {
+//            block.copyFrom(crossover.getLowBlock());
+//        } else if (outputBand == 1) {
+//            block.copyFrom(crossover.getMidBlock());
+//        } else if (outputBand == 2) {
+//            block.copyFrom(crossover.getHighBlock());
+//        } else {
+//            crossover.combine(block);
+//        }
+//    } else {
+//        lrCrossover.split(block);
+//        if (outputBand == 0) {
+//            block.copyFrom(lrCrossover.getLowBlock());
+//        } else if (outputBand == 1) {
+//            block.copyFrom(lrCrossover.getMidBlock());
+//        } else if (outputBand == 2) {
+//            block.copyFrom(lrCrossover.getHighBlock());
+//        } else {
+//            lrCrossover.combine(block);
+//        }
+//    }
 }
 
 //==============================================================================
@@ -184,8 +185,8 @@ bool PluginProcessor::hasEditor() const {
 }
 
 juce::AudioProcessorEditor *PluginProcessor::createEditor() {
-//    return new PluginEditor(*this);
-    return new juce::GenericAudioProcessorEditor(*this);
+    return new PluginEditor(*this);
+    // return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
