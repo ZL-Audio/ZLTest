@@ -4,4 +4,4 @@
 	branch = master
 [submodule "modules/friz"]
 	path = modules/friz
-	url = https://github.com/bgporter/animator
+	url = https://github.com/chrhaase/animator/tree/fix-warnings
