@@ -15,11 +15,10 @@
 #include "rotary_slider_look_and_feel.h"
 
 namespace zlInterface {
-    class RotarySliderComponent : public juce::Component {
+    class RotarySlider : public juce::Component {
     public:
-        explicit RotarySliderComponent(const juce::String &labelText, UIBase &base) :
-        myLookAndFeel(base), nameLookAndFeel(base) {
-            uiBase = &base;
+        explicit RotarySlider(const juce::String &labelText, UIBase &base) :
+        myLookAndFeel(base), nameLookAndFeel(base), uiBase(base){
             // setup slider
             slider.setSliderStyle(juce::Slider::Rotary);
             slider.setTextBoxIsEditable(false);
@@ -34,16 +33,16 @@ namespace zlInterface {
             addAndMakeVisible(label);
         }
 
-        ~RotarySliderComponent() override {
+        ~RotarySlider() override {
             slider.setLookAndFeel(nullptr);
             label.setLookAndFeel(nullptr);
         }
 
         void resized() override {
             auto bound = getLocalBounds().toFloat();
-            auto boundMinWH = juce::jmin(bound.getWidth(), bound.getHeight() - uiBase->getFontSize() * FontHuge);
-            bound = bound.withSizeKeepingCentre(boundMinWH, boundMinWH + uiBase->getFontSize() * FontHuge);
-            auto textBound = bound.removeFromTop(uiBase->getFontSize() * FontHuge);
+            auto boundMinWH = juce::jmin(bound.getWidth(), bound.getHeight() - uiBase.getFontSize() * FontHuge);
+            bound = bound.withSizeKeepingCentre(boundMinWH, boundMinWH + uiBase.getFontSize() * FontHuge);
+            auto textBound = bound.removeFromTop(uiBase.getFontSize() * FontHuge);
             label.setBounds(textBound.toNearestInt());
             auto bounds = bound;
             auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.9f;
@@ -70,7 +69,7 @@ namespace zlInterface {
         juce::Slider slider;
         juce::Label label;
 
-        UIBase *uiBase;
+        UIBase &uiBase;
 
         constexpr static float sliderHeight = 0.85f;
         constexpr static float labelHeight = 1.f - sliderHeight;

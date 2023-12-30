@@ -6,3 +6,5 @@
 	path = modules/friz
 	url = https://github.com/ZL-Audio/animator
 	branch = fix-warnings
+[submodule "friz"]
+	branch = fix-warnings

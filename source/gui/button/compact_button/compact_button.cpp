@@ -32,6 +32,7 @@ namespace zlInterface {
                     animationId, {0.f}, {1.f}, 250, friz::Parametric::kLinear)
             };
             effect->updateFn = [this](int id, const auto &vals) {
+                juce::ignoreUnused(id);
                 lookAndFeel.setDepth(vals[0]);
                 repaint();
             };

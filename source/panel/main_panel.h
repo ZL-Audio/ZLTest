@@ -7,8 +7,9 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
-#include "../gui/slider/rotarty_slider/rotary_slider_component.h"
-#include "../gui/slider/two_value_rotary_slider/two_value_rotary_slider_component.h"
+#include "../gui/slider/compact_linear_slider/compact_linear_slider.h"
+#include "../gui/slider/rotarty_slider/rotary_slider.h"
+#include "../gui/slider/two_value_rotary_slider/two_value_rotary_slider.h"
 #include "../gui/button/compact_button/compact_button.h"
 
 namespace zlPanel {
@@ -26,9 +27,11 @@ namespace zlPanel {
         private:
             zlInterface::UIBase uiBase;
 
-            std::unique_ptr<zlInterface::RotarySliderComponent> slider;
+            std::unique_ptr<zlInterface::RotarySlider> slider;
 
-            std::unique_ptr<zlInterface::TwoValueRotarySliderComponent> slider2;
+            std::unique_ptr<zlInterface::TwoValueRotarySlider> slider2;
+
+            std::unique_ptr<zlInterface::CompactLinearSlider> slider3;
 
             std::unique_ptr<zlInterface::CompactButton> button1;
 

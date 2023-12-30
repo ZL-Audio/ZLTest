@@ -2,12 +2,14 @@
 // Created by Zishu Liu on 12/28/23.
 //
 
-#include "two_value_rotary_slider_component.h"
+#include "two_value_rotary_slider.h"
 
 namespace zlInterface {
-    TwoValueRotarySliderComponent::TwoValueRotarySliderComponent(const juce::String &labelText, UIBase &base)
+    TwoValueRotarySlider::TwoValueRotarySlider(const juce::String &labelText, UIBase &base)
         : uiBase(base), slider1LAF(base), slider2LAF(base),
-          labelLookAndFeel(base), labelLookAndFeel1(base), labelLookAndFeel2(base) {
+          labelLookAndFeel(base), labelLookAndFeel1(base), labelLookAndFeel2(base),
+          animator{std::make_unique<friz::DisplaySyncController>(this)} {
+        juce::ignoreUnused(uiBase);
         for (auto const s: {&slider1, &slider2}) {
             s->setSliderStyle(juce::Slider::Rotary);
             s->setTextBoxStyle(juce::Slider::TextEntryBoxPosition::NoTextBox, true, 0, 0);
@@ -15,8 +17,10 @@ namespace zlInterface {
             s->setScrollWheelEnabled(true);
             s->setInterceptsMouseClicks(false, false);
         }
+        slider1.setBufferedToImage(true);
         slider1.setLookAndFeel(&slider1LAF);
         slider2LAF.setEditable(showSlider2.load());
+        slider2.setBufferedToImage(true);
         slider2.setLookAndFeel(&slider2LAF);
 
         addAndMakeVisible(slider1);
@@ -46,7 +50,7 @@ namespace zlInterface {
         setInterceptsMouseClicks(true, false);
     }
 
-    TwoValueRotarySliderComponent::~TwoValueRotarySliderComponent() {
+    TwoValueRotarySlider::~TwoValueRotarySlider() {
         slider1.setLookAndFeel(nullptr);
         slider2.setLookAndFeel(nullptr);
         for (auto &l: {&label, &label1, &label2}) {
@@ -54,7 +58,7 @@ namespace zlInterface {
         }
     }
 
-    juce::String TwoValueRotarySliderComponent::getDisplayValue(juce::Slider &s) {
+    juce::String TwoValueRotarySlider::getDisplayValue(juce::Slider &s) {
         auto value = s.getValue();
         juce::String labelToDisplay = juce::String(s.getTextFromValue(value)).substring(0, 4);
         if (value < 10000 && labelToDisplay.contains(".")) {
@@ -67,7 +71,7 @@ namespace zlInterface {
         return labelToDisplay;
     }
 
-    void TwoValueRotarySliderComponent::mouseUp(const juce::MouseEvent &event) {
+    void TwoValueRotarySlider::mouseUp(const juce::MouseEvent &event) {
         if (!showSlider2.load() || (event.mods.isLeftButtonDown() && !event.mods.isCommandDown())) {
             slider1.mouseUp(event);
             label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
@@ -77,7 +81,7 @@ namespace zlInterface {
         }
     }
 
-    void TwoValueRotarySliderComponent::mouseDown(const juce::MouseEvent &event) {
+    void TwoValueRotarySlider::mouseDown(const juce::MouseEvent &event) {
         if (!showSlider2.load() || (event.mods.isLeftButtonDown() && !event.mods.isCommandDown())) {
             slider1.mouseDown(event);
             label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
@@ -87,7 +91,7 @@ namespace zlInterface {
         }
     }
 
-    void TwoValueRotarySliderComponent::mouseDrag(const juce::MouseEvent &event) {
+    void TwoValueRotarySlider::mouseDrag(const juce::MouseEvent &event) {
         if (!showSlider2.load() || (event.mods.isLeftButtonDown() && !event.mods.isCommandDown())) {
             slider1.mouseDrag(event);
             label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
@@ -97,7 +101,7 @@ namespace zlInterface {
         }
     }
 
-    void TwoValueRotarySliderComponent::mouseEnter(const juce::MouseEvent &event) {
+    void TwoValueRotarySlider::mouseEnter(const juce::MouseEvent &event) {
         slider1.mouseEnter(event);
         slider2.mouseEnter(event);
         mouseOver.store(true);
@@ -108,7 +112,7 @@ namespace zlInterface {
         repaint();
     }
 
-    void TwoValueRotarySliderComponent::mouseExit(const juce::MouseEvent &event) {
+    void TwoValueRotarySlider::mouseExit(const juce::MouseEvent &event) {
         slider1.mouseExit(event);
         slider2.mouseExit(event);
         mouseOver.store(false);
@@ -117,7 +121,6 @@ namespace zlInterface {
             return;
         auto effect{
             friz::makeAnimation<friz::Parametric, 1>(
-                // ID of the animation
                 animationId, {1.5f}, {0.f}, 1000, friz::Parametric::kLinear)
         };
         effect->updateFn = [this](int, const auto &vals) {
@@ -125,18 +128,19 @@ namespace zlInterface {
             labelLookAndFeel.setAlpha(1 - val);
             labelLookAndFeel1.setAlpha(val);
             labelLookAndFeel2.setAlpha(val);
-            repaint();
+            for (auto &l:{&label, &label1, &label2}) {
+                l->repaint();
+            }
         };
 
-        // pass the animation object to the animator, which will start running it immediately.
         animator.addAnimation(std::move(effect));
     }
 
-    void TwoValueRotarySliderComponent::mouseMove(const juce::MouseEvent &event) {
+    void TwoValueRotarySlider::mouseMove(const juce::MouseEvent &event) {
         juce::ignoreUnused(event);
     }
 
-    void TwoValueRotarySliderComponent::mouseDoubleClick(const juce::MouseEvent &event) {
+    void TwoValueRotarySlider::mouseDoubleClick(const juce::MouseEvent &event) {
         if (!showSlider2.load() || (event.mods.isLeftButtonDown() && !event.mods.isCommandDown())) {
             slider1.mouseDoubleClick(event);
             label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
@@ -146,8 +150,8 @@ namespace zlInterface {
         }
     }
 
-    void TwoValueRotarySliderComponent::mouseWheelMove(const juce::MouseEvent &event,
-                                                       const juce::MouseWheelDetails &wheel) {
+    void TwoValueRotarySlider::mouseWheelMove(const juce::MouseEvent &event,
+                                              const juce::MouseWheelDetails &wheel) {
         if (!showSlider2.load() || !event.mods.isCommandDown()) {
             slider1.mouseWheelMove(event, wheel);
             label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
@@ -158,7 +162,7 @@ namespace zlInterface {
     }
 
 
-    void TwoValueRotarySliderComponent::resized() {
+    void TwoValueRotarySlider::resized() {
         slider1.setBounds(getLocalBounds());
         slider2.setBounds(getLocalBounds());
 
@@ -166,8 +170,12 @@ namespace zlInterface {
         auto labelBound = localBound.withSizeKeepingCentre(localBound.getWidth() * 0.7f,
                                                            localBound.getHeight() * 0.6f);
         label.setBounds(labelBound.toNearestInt());
-        auto valueBound = labelBound.removeFromTop(labelBound.getHeight() * 0.5f);
-        label1.setBounds(valueBound.toNearestInt());
-        label2.setBounds(labelBound.toNearestInt());
+        if (showSlider2.load()) {
+            auto valueBound = labelBound.removeFromTop(labelBound.getHeight() * 0.5f);
+            label1.setBounds(valueBound.toNearestInt());
+            label2.setBounds(labelBound.toNearestInt());
+        } else {
+            label1.setBounds(getLocalBounds());
+        }
     }
 }

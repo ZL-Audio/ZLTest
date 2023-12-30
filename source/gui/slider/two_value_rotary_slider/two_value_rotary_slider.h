@@ -14,11 +14,11 @@
 #include "../../label/name_look_and_feel.h"
 
 namespace zlInterface {
-    class TwoValueRotarySliderComponent : public juce::Component {
+    class TwoValueRotarySlider : public juce::Component {
     public:
-        explicit TwoValueRotarySliderComponent(const juce::String &labelText, UIBase &base);
+        explicit TwoValueRotarySlider(const juce::String &labelText, UIBase &base);
 
-        ~TwoValueRotarySliderComponent() override;
+        ~TwoValueRotarySlider() override;
 
         // void paintOverChildren(juce::Graphics &g) override;
 
@@ -44,9 +44,9 @@ namespace zlInterface {
 
         inline juce::Slider &getSlider2() { return slider2; }
 
-        inline void setShowSlider2(bool x) {
+        inline void setShowSlider2(const bool x) {
             showSlider2.store(x);
-            repaint();
+            resized();
         }
 
     private:
@@ -62,7 +62,6 @@ namespace zlInterface {
         std::atomic<bool> showSlider2 = true, mouseOver = false, editable = true;
 
         friz::Animator animator;
-
         static constexpr int animationId = 1;
 
         juce::String getDisplayValue(juce::Slider &s);
