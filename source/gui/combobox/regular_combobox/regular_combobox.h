@@ -11,8 +11,8 @@
 #ifndef ZL_REGULAR_COMBOBOX_COMPONENT_H
 #define ZL_REGULAR_COMBOBOX_COMPONENT_H
 
-#include "combobox_look_and_feel.h"
-#include "../label/name_look_and_feel.h"
+#include "regular_combobox_look_and_feel.h"
+#include "../../label/name_look_and_feel.h"
 
 namespace zlInterface {
     class RegularCombobox : public juce::Component {
@@ -20,7 +20,6 @@ namespace zlInterface {
         explicit RegularCombobox(const juce::String &labelText, const juce::StringArray &choices, UIBase &base) :
                 myLookAndFeel(base), nameLookAndFeel(base) {
             uiBase = &base;
-            setLookAndFeel(&myLookAndFeel);
             comboBox.addItemList(choices, 1);
             comboBox.setLookAndFeel(&myLookAndFeel);
             comboBox.setScrollWheelEnabled(false);
@@ -33,7 +32,6 @@ namespace zlInterface {
         }
 
         ~RegularCombobox() override {
-            setLookAndFeel(nullptr);
             comboBox.setLookAndFeel(nullptr);
             label.setLookAndFeel(nullptr);
         }
@@ -59,7 +57,7 @@ namespace zlInterface {
         }
 
     private:
-        ComboboxLookAndFeel myLookAndFeel;
+        RegularComboboxLookAndFeel myLookAndFeel;
         NameLookAndFeel nameLookAndFeel;
         juce::ComboBox comboBox;
         juce::Label label;

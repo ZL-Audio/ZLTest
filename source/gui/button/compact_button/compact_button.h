@@ -22,6 +22,10 @@ namespace zlInterface {
 
         void buttonDownAnimation();
 
+        inline void setEditable(const bool f) {
+            lookAndFeel.setEditable(f);
+        }
+
     private:
         UIBase &uiBase;
 

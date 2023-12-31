@@ -62,10 +62,10 @@ namespace zlInterface {
         bool curveTopLeft = true, curveTopRight = true, curveBottomLeft = true, curveBottomRight = true;
         bool fit = true, flip = false;
         bool drawBright = true, drawDark = true, drawMain = true;
-        bool changeMain = false, changeDark = false, changeBright = false;
         juce::Colour mainColour = BackgroundColor;
         juce::Colour darkShadowColor = DarkShadowColor;
         juce::Colour brightShadowColor = BrightShadowColor;
+        bool changeMain = false, changeDark = false, changeBright = false;
     };
 
     struct fillShadowEllipseArgs {

@@ -46,11 +46,11 @@ namespace zlInterface {
             }
         }
 
-        inline void setEditable(bool f) { editable.store(f); }
+        inline void setEditable(const bool f) { editable.store(f); }
 
         inline float getDepth() { return buttonDepth.load(); }
 
-        inline void setDepth(float x) { buttonDepth = x; }
+        inline void setDepth(const float x) { buttonDepth = x; }
 
     private:
         std::atomic<bool> editable = true;

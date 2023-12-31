@@ -70,9 +70,7 @@ namespace zlInterface {
                 }
             }
         }
-        void setEditable(bool f) {
-            editable.store(f);
-        }
+        inline void setEditable(const bool f) { editable.store(f); }
 
     private:
         std::atomic<bool> editable = true;

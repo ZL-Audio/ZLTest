@@ -29,7 +29,7 @@ namespace zlInterface {
             addAndMakeVisible(label);
         }
 
-        ~ButtonComponent() override {
+        ~RegularButton() override {
             button.setLookAndFeel(nullptr);
             label.setLookAndFeel(nullptr);
         }
@@ -49,13 +49,13 @@ namespace zlInterface {
 
         juce::Label &getLabel() { return label; }
 
-        void setEditable(bool f) {
+        void setEditable(const bool f) {
             myLookAndFeel.setEditable(f);
             nameLookAndFeel.setEditable(f);
         }
 
     private:
-        ButtonLookAndFeel myLookAndFeel;
+        RegularButtonLookAndFeel myLookAndFeel;
         NameLookAndFeel nameLookAndFeel;
         juce::ToggleButton button;
         juce::Label label;
