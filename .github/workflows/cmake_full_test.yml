@@ -154,7 +154,7 @@ jobs:
       working-directory: ${{ env.BUILD_DIR }}
       shell: bash
       run: |
-        tee "pluginval_disable.txt"
+        cat "pluginval_disable.txt"
         ${{ matrix.pluginval-binary }} --verbose --validate "${{ env.VST3_PATH }}" --disabled-tests "pluginval_disable.txt"
       env:
         STRICTNESS_LEVEL: 10
