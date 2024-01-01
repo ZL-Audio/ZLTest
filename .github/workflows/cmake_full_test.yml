@@ -154,8 +154,8 @@ jobs:
       working-directory: ${{ env.BUILD_DIR }}
       shell: bash
       run: |
-        cat "pluginval_disable.txt"
-        ${{ matrix.pluginval-binary }} --verbose --validate "${{ env.VST3_PATH }}" --disabled-tests "pluginval_disable.txt"
+        cat "./pluginval_disable.txt"
+        ${{ matrix.pluginval-binary }} --verbose --validate "${{ env.VST3_PATH }}" --disabled-tests "./pluginval_disable.txt"
       env:
         STRICTNESS_LEVEL: 10
         TIMEOUT_MS: 720000
@@ -169,7 +169,7 @@ jobs:
       run: |
         sudo cp -r "${{ env.AU_PATH }}" "/Library/Audio/Plug-ins/components"
         sudo killall -9 AudioComponentRegistrar
-        ${{ matrix.pluginval-binary }} --verbose --validate "/Library/Audio/Plug-ins/components/${{ env.PRODUCT_NAME }}.component" --disabled-tests "pluginval_disable.txt"
+        ${{ matrix.pluginval-binary }} --verbose --validate "/Library/Audio/Plug-ins/components/${{ env.PRODUCT_NAME }}.component" --disabled-tests "./pluginval_disable.txt"
       env:
         STRICTNESS_LEVEL: 10
         TIMEOUT_MS: 720000
