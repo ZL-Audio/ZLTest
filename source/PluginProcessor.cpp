@@ -32,26 +32,26 @@ PluginProcessor::PluginProcessor()
                                                                          4800),
                      }),
           crossover(*this, 64), lrCrossover(*this) {
-    parameters.addParameterListener("filter_type", this);
-    parameters.addParameterListener("low_split", this);
-    parameters.addParameterListener("high_split", this);
+    // parameters.addParameterListener("filter_type", this);
+    // parameters.addParameterListener("low_split", this);
+    // parameters.addParameterListener("high_split", this);
 }
 
 void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {
-    if (parameterID == "low_split") {
-        crossover.setLowFreq(newValue);
-        lrCrossover.setLowFreq(newValue);
-    } else if (parameterID == "high_split") {
-        crossover.setHighFreq(newValue);
-        lrCrossover.setLowFreq(newValue);
-    } else if (parameterID == "filter_type") {
-        filterType.store(static_cast<size_t>(newValue));
-        if (filterType.load() == 0) {
-            setLatencySamples(crossover.getLatency());
-        } else {
-            setLatencySamples(0);
-        }
-    }
+    // if (parameterID == "low_split") {
+    //     crossover.setLowFreq(newValue);
+    //     lrCrossover.setLowFreq(newValue);
+    // } else if (parameterID == "high_split") {
+    //     crossover.setHighFreq(newValue);
+    //     lrCrossover.setLowFreq(newValue);
+    // } else if (parameterID == "filter_type") {
+    //     filterType.store(static_cast<size_t>(newValue));
+    //     if (filterType.load() == 0) {
+    //         setLatencySamples(crossover.getLatency());
+    //     } else {
+    //         setLatencySamples(0);
+    //     }
+    // }
 }
 
 PluginProcessor::~PluginProcessor() {
