@@ -11,8 +11,8 @@
 #ifndef ZL_ROTARY_SLIDER_COMPONENT_H
 #define ZL_ROTARY_SLIDER_COMPONENT_H
 
-#include "../../label/name_look_and_feel.h"
-#include "rotary_slider_look_and_feel.h"
+#include "../../label/name_look_and_feel.hpp"
+#include "rotary_slider_look_and_feel.hpp"
 
 namespace zlInterface {
     class RotarySlider : public juce::Component {

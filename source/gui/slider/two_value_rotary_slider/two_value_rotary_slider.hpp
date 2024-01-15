@@ -8,10 +8,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <friz/friz.h>
 
-#include "../../interface_definitions.h"
-#include "first_rotary_slider_look_and_feel.h"
-#include "second_rotary_slider_look_and_feel.h"
-#include "../../label/name_look_and_feel.h"
+#include "../../interface_definitions.hpp"
+#include "first_rotary_slider_look_and_feel.hpp"
+#include "second_rotary_slider_look_and_feel.hpp"
+#include "../../label/name_look_and_feel.hpp"
 
 namespace zlInterface {
     class TwoValueRotarySlider : public juce::Component {
@@ -44,10 +44,22 @@ namespace zlInterface {
 
         inline juce::Slider &getSlider2() { return slider2; }
 
-        inline void setShowSlider2(const bool x) {
-            showSlider2.store(x);
-            resized();
+        void setShowSlider2(bool x);
+
+        inline void setPadding(const float lr, const float ub) {
+            lrPad.store(lr);
+            ubPad.store(ub);
         }
+
+        inline void setEditable(const bool x) {
+            editable.store(x);
+            labelLookAndFeel.setEditable(x);
+            labelLookAndFeel1.setEditable(x);
+            labelLookAndFeel2.setEditable(x);
+            setInterceptsMouseClicks(x, false);
+        }
+
+        inline bool getEditable() const { return editable.load(); }
 
     private:
         UIBase &uiBase;
@@ -59,12 +71,13 @@ namespace zlInterface {
         juce::Label label, label1, label2;
         NameLookAndFeel labelLookAndFeel, labelLookAndFeel1, labelLookAndFeel2;
 
-        std::atomic<bool> showSlider2 = true, mouseOver = false, editable = true;
+        std::atomic<bool> showSlider2 = true, mouseOver, editable;
+        std::atomic<float> lrPad = 0, ubPad = 0;
 
         friz::Animator animator;
         static constexpr int animationId = 1;
 
-        juce::String getDisplayValue(juce::Slider &s);
+        static juce::String getDisplayValue(juce::Slider &s);
     };
 }
 

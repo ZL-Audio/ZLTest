@@ -7,7 +7,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-#include "../../interface_definitions.h"
+#include "../../interface_definitions.hpp"
 
 namespace zlInterface {
     class SecondRotarySliderLookAndFeel : public juce::LookAndFeel_V4 {
@@ -49,19 +49,13 @@ namespace zlInterface {
             uiBase->drawShadowEllipse(g, arrowBound, uiBase->getFontSize() * 0.5f,
                                       {
                                           .fit = false, .drawBright = false, .drawDark = true,
-                                          .mainColour = uiBase->getExtraColor1().withBrightness(uiBase->getBackgroundColor().getBrightness()).withAlpha(0.75f),
+                                          .mainColour = uiBase->getColorMap2(0),
                                           .changeMain = true
                                       });
             g.restoreState();
         }
 
-        void drawLabel(juce::Graphics &g, juce::Label &label) override {
-            juce::ignoreUnused(g, label);
-        }
-
-        void setEditable(bool f) {
-            editable.store(f);
-        }
+        void setEditable(const bool f) { editable.store(f); }
 
     private:
         std::atomic<bool> editable = true;

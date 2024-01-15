@@ -8,34 +8,31 @@
 // You should have received a copy of the GNU General Public License along with ZLEComp. If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
 
-#ifndef ZL_LINEAR_SLIDER_H
-#define ZL_LINEAR_SLIDER_H
+#ifndef ZL_REGULAR_COMBOBOX_COMPONENT_H
+#define ZL_REGULAR_COMBOBOX_COMPONENT_H
 
-#include "../../label/name_look_and_feel.h"
-#include "linear_slider_look_and_feel.h"
+#include "regular_combobox_look_and_feel.hpp"
+#include "../../label/name_look_and_feel.hpp"
 
 namespace zlInterface {
-    class LinearSlider : public juce::Component {
+    class RegularCombobox : public juce::Component {
     public:
-        explicit LinearSlider(const juce::String &labelText, UIBase &base) :
+        explicit RegularCombobox(const juce::String &labelText, const juce::StringArray &choices, UIBase &base) :
                 myLookAndFeel(base), nameLookAndFeel(base) {
             uiBase = &base;
-            // setup slider
-            slider.setSliderStyle(juce::Slider::LinearHorizontal);
-            slider.setTextBoxIsEditable(false);
-            slider.setDoubleClickReturnValue(true, 0.0);
-            slider.setLookAndFeel(&myLookAndFeel);
-            slider.setScrollWheelEnabled(true);
-            addAndMakeVisible(slider);
-
-            // setup label
+            comboBox.addItemList(choices, 1);
+            comboBox.setLookAndFeel(&myLookAndFeel);
+            comboBox.setScrollWheelEnabled(false);
+            addAndMakeVisible(comboBox);
             label.setText(labelText, juce::dontSendNotification);
             label.setLookAndFeel(&nameLookAndFeel);
             addAndMakeVisible(label);
+
+            uiBase = &base;
         }
 
-        ~LinearSlider() override {
-            slider.setLookAndFeel(nullptr);
+        ~RegularCombobox() override {
+            comboBox.setLookAndFeel(nullptr);
             label.setLookAndFeel(nullptr);
         }
 
@@ -43,15 +40,14 @@ namespace zlInterface {
             auto bound = getLocalBounds().toFloat();
             auto labelBound = bound.removeFromTop(labelHeight * bound.getHeight());
             label.setBounds(labelBound.toNearestInt());
-            bound = bound.withSizeKeepingCentre(bound.getWidth(), bound.getWidth() * sliderRatio);
-            slider.setBounds(bound.toNearestInt());
+            comboBox.setBounds(bound.toNearestInt());
         }
 
         void paint(juce::Graphics &g) override {
             juce::ignoreUnused(g);
         }
 
-        juce::Slider &getSlider() { return slider; }
+        juce::ComboBox &getComboBox() { return comboBox; }
 
         juce::Label &getLabel() { return label; }
 
@@ -61,17 +57,16 @@ namespace zlInterface {
         }
 
     private:
-        LinearSliderLookAndFeel myLookAndFeel;
+        RegularComboboxLookAndFeel myLookAndFeel;
         NameLookAndFeel nameLookAndFeel;
-        juce::Slider slider;
+        juce::ComboBox comboBox;
         juce::Label label;
 
-        constexpr static float sliderHeight = 0.7f;
-        constexpr static float labelHeight = 1.f - sliderHeight;
-        constexpr static float sliderRatio = 0.45f;
+        constexpr static float boxHeight = 0.7f;
+        constexpr static float labelHeight = 1.f - boxHeight;
+        constexpr static float boxRatio = 0.45f;
 
         UIBase *uiBase;
     };
 }
-
-#endif //ZL_LINEAR_SLIDER_H
+#endif //ZL_REGULAR_COMBOBOX_COMPONENT_H

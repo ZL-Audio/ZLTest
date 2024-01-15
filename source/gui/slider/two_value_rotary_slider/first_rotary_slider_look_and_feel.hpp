@@ -8,17 +8,17 @@
 // You should have received a copy of the GNU General Public License along with ZLEComp. If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
 
-#ifndef ZL_ROTARY_SLIDER_LOOK_AND_FEEL_H
-#define ZL_ROTARY_SLIDER_LOOK_AND_FEEL_H
+#ifndef ZL_FIRST_ROTARY_SLIDER_LOOK_AND_FEEL_H
+#define ZL_FIRST_ROTARY_SLIDER_LOOK_AND_FEEL_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-#include "../../interface_definitions.h"
+#include "../../interface_definitions.hpp"
 
 namespace zlInterface {
-    class RotarySliderLookAndFeel : public juce::LookAndFeel_V4 {
+    class FirstRotarySliderLookAndFeel : public juce::LookAndFeel_V4 {
     public:
-        explicit RotarySliderLookAndFeel(UIBase &base) {
+        explicit FirstRotarySliderLookAndFeel(UIBase &base) {
             uiBase = &base;
         }
 
@@ -75,54 +75,7 @@ namespace zlInterface {
             g.restoreState();
         }
 
-        juce::Label *createSliderTextBox(juce::Slider &) override {
-            auto *l = new juce::Label();
-            l->setJustificationType(juce::Justification::centred);
-            l->setInterceptsMouseClicks(false, false);
-            return l;
-        }
-
-        juce::Slider::SliderLayout getSliderLayout(juce::Slider &slider) override {
-            auto localBounds = slider.getLocalBounds().toFloat();
-            juce::Slider::SliderLayout layout;
-            auto textBounds = localBounds.withSizeKeepingCentre(localBounds.getWidth() * 0.7f,
-                                                                localBounds.getHeight() * 0.7f);
-            layout.textBoxBounds = textBounds.toNearestInt();
-            layout.sliderBounds = slider.getLocalBounds();
-            return layout;
-        }
-
-        void drawLabel(juce::Graphics &g, juce::Label &label) override {
-            if (editable.load()) {
-                g.setColour(uiBase->getTextColor());
-            } else {
-                g.setColour(uiBase->getTextInactiveColor());
-            }
-            auto labelArea{label.getLocalBounds().toFloat()};
-            auto center = labelArea.getCentre();
-            if (uiBase->getFontSize() > 0) {
-                g.setFont(uiBase->getFontSize() * FontHuge);
-            } else {
-                g.setFont(labelArea.getHeight() * 0.6f);
-            }
-            float value = label.getText().getFloatValue();
-            juce::String labelToDisplay = juce::String(label.getText()).substring(0, 4);
-            if (value < 10000 && labelToDisplay.contains(".")) {
-                labelToDisplay = juce::String(label.getText()).substring(0, 5);
-            }
-            if (value > 10000) {
-                value = value / 1000;
-                labelToDisplay = juce::String(value).substring(0, 4) + "K";
-            }
-            g.drawSingleLineText(labelToDisplay,
-                                 juce::roundToInt(center.x + g.getCurrentFont().getHorizontalScale()),
-                                 juce::roundToInt(center.y + g.getCurrentFont().getDescent()),
-                                 juce::Justification::horizontallyCentred);
-        }
-
-        void setEditable(bool f) {
-            editable.store(f);
-        }
+        void setEditable(const bool f) { editable.store(f); }
 
     private:
         std::atomic<bool> editable = true;
@@ -130,4 +83,4 @@ namespace zlInterface {
         UIBase *uiBase;
     };
 }
-#endif //ZL_ROTARY_SLIDER_LOOK_AND_FEEL_H
+#endif //ZL_FIRST_ROTARY_SLIDER_LOOK_AND_FEEL_H

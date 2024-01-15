@@ -7,8 +7,8 @@
 
 #include <friz/friz.h>
 
-#include "../../label/name_look_and_feel.h"
-#include "compact_linear_slider_look_and_feel.h"
+#include "../../label/name_look_and_feel.hpp"
+#include "compact_linear_slider_look_and_feel.hpp"
 
 namespace zlInterface {
     class CompactLinearSlider : public juce::Component {
@@ -35,13 +35,28 @@ namespace zlInterface {
 
         void mouseWheelMove(const juce::MouseEvent &event, const juce::MouseWheelDetails &wheel) override;
 
+        inline juce::Slider& getSlider() {return slider;}
+
+        inline void setEditable(const bool x) {
+            nameLookAndFeel.setEditable(x);
+            textLookAndFeel.setEditable(x);
+            setInterceptsMouseClicks(x, false);
+        }
+
+        inline void setPadding(const float lr, const float ub) {
+            lrPad.store(lr);
+            ubPad.store(ub);
+        }
+
     private:
+        UIBase &uiBase;
+
         CompactLinearSliderLookAndFeel sliderLookAndFeel;
         NameLookAndFeel nameLookAndFeel, textLookAndFeel;
         juce::Slider slider;
         juce::Label label, text;
 
-        UIBase &uiBase;
+        std::atomic<float> lrPad = 0, ubPad = 0;
 
         friz::Animator animator;
         static constexpr int animationId = 1;

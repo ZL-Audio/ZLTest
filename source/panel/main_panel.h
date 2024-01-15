@@ -7,9 +7,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
-#include "../gui/slider/slider.h"
-#include "../gui/button/button.h"
-#include "../gui/combobox/combobox.h"
+#include "../gui/gui.hpp"
 
 namespace zlPanel {
 

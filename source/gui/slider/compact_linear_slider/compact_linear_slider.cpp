@@ -1,13 +1,18 @@
+// Copyright (C) 2023 - zsliu98
+// This file is part of ZLEqualizer
 //
-// Created by Zishu Liu on 12/30/23.
+// ZLEqualizer is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
+// ZLEqualizer is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with ZLEqualizer. If not, see <https://www.gnu.org/licenses/>.
 
-#include "compact_linear_slider.h"
+#include "compact_linear_slider.hpp"
 
 namespace zlInterface {
-    CompactLinearSlider::CompactLinearSlider(const juce::String &labelText, UIBase &base) : sliderLookAndFeel(base),
-        nameLookAndFeel(base), textLookAndFeel(base), uiBase(base),
-        animator{std::make_unique<friz::DisplaySyncController>(this)} {
+    CompactLinearSlider::CompactLinearSlider(const juce::String &labelText, UIBase &base) : uiBase(base),
+        sliderLookAndFeel(base), nameLookAndFeel(base), textLookAndFeel(base),
+        animator{} {
         juce::ignoreUnused(uiBase);
 
         slider.setSliderStyle(juce::Slider::LinearHorizontal);
@@ -23,7 +28,7 @@ namespace zlInterface {
 
         text.setText(getDisplayValue(slider), juce::dontSendNotification);
         textLookAndFeel.setAlpha(0.f);
-        textLookAndFeel.setFontScale(FontNormal);
+        textLookAndFeel.setFontScale(FontHuge);
         text.setLookAndFeel(&textLookAndFeel);
         text.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(text);
@@ -31,10 +36,11 @@ namespace zlInterface {
         // setup label
         label.setText(labelText, juce::dontSendNotification);
         label.setLookAndFeel(&nameLookAndFeel);
+        nameLookAndFeel.setFontScale(FontHuge);
         label.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(label);
 
-        setInterceptsMouseClicks(true, false);
+        setEditable(true);
     }
 
     CompactLinearSlider::~CompactLinearSlider() {
@@ -44,9 +50,12 @@ namespace zlInterface {
     }
 
     void CompactLinearSlider::resized() {
-        slider.setBounds(getLocalBounds());
-        text.setBounds(getLocalBounds());
-        label.setBounds(getLocalBounds());
+        auto bound = getLocalBounds().toFloat();
+        bound = bound.withSizeKeepingCentre(bound.getWidth() - lrPad.load(),
+                                            uiBase.getFontSize() * FontLarge * 1.75f - ubPad.load());
+        slider.setBounds(bound.toNearestInt());
+        text.setBounds(bound.toNearestInt());
+        label.setBounds(bound.toNearestInt());
     }
 
     void CompactLinearSlider::mouseUp(const juce::MouseEvent &event) {
@@ -68,6 +77,7 @@ namespace zlInterface {
         textLookAndFeel.setAlpha(1.f);
         nameLookAndFeel.setAlpha(0.f);
         slider.mouseEnter(event);
+        text.setText(getDisplayValue(slider), juce::dontSendNotification);
         animator.cancelAnimation(animationId, false);
         text.repaint();
         label.repaint();
@@ -119,5 +129,4 @@ namespace zlInterface {
         }
         return labelToDisplay;
     }
-
 }

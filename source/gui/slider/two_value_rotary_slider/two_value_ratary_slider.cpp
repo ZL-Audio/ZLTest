@@ -2,13 +2,13 @@
 // Created by Zishu Liu on 12/28/23.
 //
 
-#include "two_value_rotary_slider.h"
+#include "two_value_rotary_slider.hpp"
 
 namespace zlInterface {
     TwoValueRotarySlider::TwoValueRotarySlider(const juce::String &labelText, UIBase &base)
         : uiBase(base), slider1LAF(base), slider2LAF(base),
           labelLookAndFeel(base), labelLookAndFeel1(base), labelLookAndFeel2(base),
-          animator{std::make_unique<friz::DisplaySyncController>(this)} {
+          animator{} {
         juce::ignoreUnused(uiBase);
         for (auto const s: {&slider1, &slider2}) {
             s->setSliderStyle(juce::Slider::Rotary);
@@ -20,7 +20,6 @@ namespace zlInterface {
         slider1.setBufferedToImage(true);
         slider1.setLookAndFeel(&slider1LAF);
         slider2LAF.setEditable(showSlider2.load());
-        slider2.setBufferedToImage(true);
         slider2.setLookAndFeel(&slider2LAF);
 
         addAndMakeVisible(slider1);
@@ -30,11 +29,11 @@ namespace zlInterface {
         label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
         label2.setText(getDisplayValue(slider2), juce::dontSendNotification);
 
-        labelLookAndFeel.setFontScale(FontHuge);
-        labelLookAndFeel1.setFontScale(FontNormal);
+        labelLookAndFeel.setFontScale(1.75f);
+        labelLookAndFeel1.setFontScale(FontHuge);
         labelLookAndFeel1.setJustification(juce::Justification::centredBottom);
         labelLookAndFeel1.setAlpha(0.f);
-        labelLookAndFeel2.setFontScale(FontNormal);
+        labelLookAndFeel2.setFontScale(FontHuge);
         labelLookAndFeel2.setJustification(juce::Justification::centredTop);
         labelLookAndFeel2.setAlpha(0.f);
 
@@ -47,7 +46,8 @@ namespace zlInterface {
             addAndMakeVisible(l);
         }
 
-        setInterceptsMouseClicks(true, false);
+        setEditable(true);
+        setShowSlider2(false);
     }
 
     TwoValueRotarySlider::~TwoValueRotarySlider() {
@@ -69,6 +69,31 @@ namespace zlInterface {
             labelToDisplay = juce::String(value).substring(0, 4) + "K";
         }
         return labelToDisplay;
+    }
+
+    void TwoValueRotarySlider::setShowSlider2(const bool x) {
+        showSlider2.store(x);
+
+        auto bound = getLocalBounds().toFloat();
+        bound = bound.withSizeKeepingCentre(bound.getWidth() - lrPad.load(),
+                                            bound.getHeight() - ubPad.load());
+
+        auto labelBound = bound.withSizeKeepingCentre(bound.getWidth() * 0.7f,
+                                                      bound.getHeight() * 0.6f);
+        if (showSlider2.load()) {
+            slider2LAF.setEditable(true);
+            const auto valueBound1 = labelBound.removeFromTop(labelBound.getHeight() * 0.5f);
+            const auto valueBound2 = labelBound;
+            label1.setBounds(valueBound1.toNearestInt());
+            label2.setBounds(valueBound2.toNearestInt());
+            labelLookAndFeel1.setJustification(juce::Justification::centredBottom);
+            labelLookAndFeel2.setJustification(juce::Justification::centredTop);
+        } else {
+            slider2LAF.setEditable(false);
+            label1.setBounds(labelBound.toNearestInt());
+            label2.setBounds(0, 0, 0, 0);
+            labelLookAndFeel1.setJustification(juce::Justification::centred);
+        }
     }
 
     void TwoValueRotarySlider::mouseUp(const juce::MouseEvent &event) {
@@ -108,6 +133,8 @@ namespace zlInterface {
         labelLookAndFeel.setAlpha(0.f);
         labelLookAndFeel1.setAlpha(1.f);
         labelLookAndFeel2.setAlpha(1.f);
+        label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
+        label2.setText(getDisplayValue(slider2), juce::dontSendNotification);
         animator.cancelAnimation(animationId, false);
         repaint();
     }
@@ -115,6 +142,7 @@ namespace zlInterface {
     void TwoValueRotarySlider::mouseExit(const juce::MouseEvent &event) {
         slider1.mouseExit(event);
         slider2.mouseExit(event);
+
         mouseOver.store(false);
 
         if (animator.getAnimation(animationId) != nullptr)
@@ -128,7 +156,7 @@ namespace zlInterface {
             labelLookAndFeel.setAlpha(1 - val);
             labelLookAndFeel1.setAlpha(val);
             labelLookAndFeel2.setAlpha(val);
-            for (auto &l:{&label, &label1, &label2}) {
+            for (auto &l: {&label, &label1, &label2}) {
                 l->repaint();
             }
         };
@@ -161,21 +189,17 @@ namespace zlInterface {
         }
     }
 
-
     void TwoValueRotarySlider::resized() {
-        slider1.setBounds(getLocalBounds());
-        slider2.setBounds(getLocalBounds());
+        auto bound = getLocalBounds().toFloat();
+        bound = bound.withSizeKeepingCentre(bound.getWidth() - lrPad.load(),
+                                            bound.getHeight() - ubPad.load());
+        slider1.setBounds(bound.toNearestInt());
+        slider2.setBounds(bound.toNearestInt());
 
-        auto localBound = getLocalBounds().toFloat();
-        auto labelBound = localBound.withSizeKeepingCentre(localBound.getWidth() * 0.7f,
-                                                           localBound.getHeight() * 0.6f);
+        auto labelBound = bound.withSizeKeepingCentre(bound.getWidth() * 0.7f,
+                                                      bound.getHeight() * 0.6f);
         label.setBounds(labelBound.toNearestInt());
-        if (showSlider2.load()) {
-            auto valueBound = labelBound.removeFromTop(labelBound.getHeight() * 0.5f);
-            label1.setBounds(valueBound.toNearestInt());
-            label2.setBounds(labelBound.toNearestInt());
-        } else {
-            label1.setBounds(getLocalBounds());
-        }
+
+        setShowSlider2(showSlider2.load());
     }
 }

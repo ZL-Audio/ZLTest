@@ -1,8 +1,13 @@
+// Copyright (C) 2023 - zsliu98
+// This file is part of ZLEqualizer
 //
-// Created by Zishu Liu on 12/28/23.
+// ZLEqualizer is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
+// ZLEqualizer is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with ZLEqualizer. If not, see <https://www.gnu.org/licenses/>.
 
-#include "interface_definitions.h"
+#include "interface_definitions.hpp"
 
 namespace zlInterface {
     UIBase::UIBase() {
@@ -21,7 +26,7 @@ namespace zlInterface {
     juce::Rectangle<float> UIBase::fillRoundedShadowRectangle(juce::Graphics &g,
                                                               juce::Rectangle<float> boxBounds,
                                                               float cornerSize,
-                                                              const fillRoundedShadowRectangleArgs &margs) {
+                                                              const fillRoundedShadowRectangleArgs &margs) const {
         auto args = margs;
         if (!args.changeMain)
             args.mainColour = getBackgroundColor().withAlpha(args.mainColour.getAlpha());
@@ -70,7 +75,7 @@ namespace zlInterface {
     juce::Rectangle<float> UIBase::fillRoundedInnerShadowRectangle(juce::Graphics &g,
                                                                    juce::Rectangle<float> boxBounds,
                                                                    float cornerSize,
-                                                                   const fillRoundedShadowRectangleArgs &margs) {
+                                                                   const fillRoundedShadowRectangleArgs &margs) const {
         auto args = margs;
         if (!args.changeMain)
             args.mainColour = getBackgroundColor().withAlpha(args.mainColour.getAlpha());
@@ -93,7 +98,7 @@ namespace zlInterface {
         auto offset = static_cast<int>(cornerSize * args.blurRadius);
         auto radius = juce::jmax(juce::roundToInt(cornerSize * args.blurRadius * 1.5f), 1);
         if (!args.flip) {
-            juce::DropShadow darkShadow(args.darkShadowColor.withAlpha(0.75f), radius,
+            juce::DropShadow darkShadow(args.darkShadowColor.withMultipliedAlpha(0.75f), radius,
                                         {-offset, -offset});
             darkShadow.drawForPath(g, mask);
             juce::DropShadow brightShadow(args.brightShadowColor, radius,
@@ -103,7 +108,7 @@ namespace zlInterface {
             juce::DropShadow brightShadow(args.darkShadowColor, radius,
                                           {offset, offset});
             brightShadow.drawForPath(g, mask);
-            juce::DropShadow darkShadow(args.brightShadowColor.withAlpha(0.75f), radius,
+            juce::DropShadow darkShadow(args.brightShadowColor.withMultipliedAlpha(0.75f), radius,
                                         {-offset, -offset});
             darkShadow.drawForPath(g, mask);
         }
@@ -139,7 +144,7 @@ namespace zlInterface {
     juce::Rectangle<float> UIBase::drawShadowEllipse(juce::Graphics &g,
                                                      juce::Rectangle<float> boxBounds,
                                                      float cornerSize,
-                                                     const fillShadowEllipseArgs &margs) {
+                                                     const fillShadowEllipseArgs &margs) const {
         auto args = margs;
         if (!args.changeMain)
             args.mainColour = getBackgroundColor().withAlpha(args.mainColour.getAlpha());
@@ -206,7 +211,7 @@ namespace zlInterface {
     juce::Rectangle<float> UIBase::drawInnerShadowEllipse(juce::Graphics &g,
                                                           juce::Rectangle<float> boxBounds,
                                                           float cornerSize,
-                                                          const fillShadowEllipseArgs &margs) {
+                                                          const fillShadowEllipseArgs &margs) const {
         auto args = margs;
         if (!args.changeMain)
             args.mainColour = getBackgroundColor().withAlpha(args.mainColour.getAlpha());

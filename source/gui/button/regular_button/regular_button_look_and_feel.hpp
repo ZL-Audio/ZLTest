@@ -13,7 +13,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-#include "../../interface_definitions.h"
+#include "../../interface_definitions.hpp"
 
 namespace zlInterface {
     class RegularButtonLookAndFeel : public juce::LookAndFeel_V4 {

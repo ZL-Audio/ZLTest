@@ -11,8 +11,8 @@
 #ifndef ZL_REGULAR_BUTTON_COMPONENT_H
 #define ZL_REGULAR_BUTTON_COMPONENT_H
 
-#include "regular_button_look_and_feel.h"
-#include "../../label/name_look_and_feel.h"
+#include "regular_button_look_and_feel.hpp"
+#include "../../label/name_look_and_feel.hpp"
 
 namespace zlInterface {
     class RegularButton : public juce::Component {

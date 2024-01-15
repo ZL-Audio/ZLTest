@@ -1,9 +1,18 @@
+// Copyright (C) 2023 - zsliu98
+// This file is part of ZLEqualizer
+//
+// ZLEqualizer is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//
+// ZLEqualizer is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with ZLEqualizer. If not, see <https://www.gnu.org/licenses/>.
+
 #ifndef COMPACT_COMBOBOX_LOOK_AND_FEEL_H
 #define COMPACT_COMBOBOX_LOOK_AND_FEEL_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-#include "../../interface_definitions.h"
+#include "../../interface_definitions.hpp"
 
 namespace zlInterface {
     class CompactComboboxLookAndFeel : public juce::LookAndFeel_V4 {
@@ -47,7 +56,7 @@ namespace zlInterface {
             } else {
                 g.setColour(uiBase->getTextInactiveColor());
             }
-            g.setFont(uiBase->getFontSize() * FontLarge);
+            g.setFont(uiBase->getFontSize() * fontScale);
             g.drawText(label.getText(), label.getLocalBounds(), juce::Justification::centred);
         }
 
@@ -66,7 +75,7 @@ namespace zlInterface {
                                        int &idealWidth, int &idealHeight) override {
             juce::ignoreUnused(text, isSeparator, standardMenuItemHeight);
             idealWidth = static_cast<int>(0);
-            idealHeight = static_cast<int>(uiBase->getFontSize() * FontLarge * 1.2f);
+            idealHeight = static_cast<int>(uiBase->getFontSize() * fontScale * 1.2f);
         }
 
         void drawPopupMenuItem(juce::Graphics &g, const juce::Rectangle<int> &area,
@@ -82,7 +91,7 @@ namespace zlInterface {
                 g.setColour(uiBase->getTextInactiveColor());
             }
             if (uiBase->getFontSize() > 0) {
-                g.setFont(uiBase->getFontSize() * FontLarge);
+                g.setFont(uiBase->getFontSize() * fontScale);
             } else {
                 g.setFont(static_cast<float>(area.getHeight()) * 0.35f);
             }
@@ -97,15 +106,17 @@ namespace zlInterface {
             return juce::roundToInt(uiBase->getFontSize() * 0.125f);
         }
 
-        inline void setEditable(bool f) { editable.store(f); }
+        inline void setEditable(const bool f) { editable.store(f); }
 
         inline void setBoxAlpha(const float x) { boxAlpha.store(x); }
+
+        inline void setFontScale(const float x) { fontScale.store(x); }
 
         inline float getBoxAlpha() const { return boxAlpha.load(); }
 
     private:
         std::atomic<bool> editable = true;
-        std::atomic<float> boxAlpha;
+        std::atomic<float> boxAlpha, fontScale = 1.5f;
 
         UIBase *uiBase;
     };
