@@ -13,45 +13,26 @@ PluginProcessor::PluginProcessor()
 ),
           parameters(*this, nullptr, juce::Identifier("ZLTestParas"),
                      {
-                             std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("filter_type", 1),
-                                                                          "Filter Type",
-                                                                          juce::StringArray{"FIR", "IIR"},
-                                                                          0),
-                             std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("output_band", 1),
-                                                                          "Output Band",
-                                                                          juce::StringArray{"Low", "Mid", "High",
-                                                                                            "All"},
-                                                                          0),
-                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("low_split", 1),
-                                                                         "Low Split",
-                                                                         juce::NormalisableRange<float>(100, 10000, 1),
-                                                                         240),
-                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("high_split", 1),
-                                                                         "High Split",
-                                                                         juce::NormalisableRange<float>(100, 10000, 1),
-                                                                         4800),
-                     }),
-          crossover(*this, 64), lrCrossover(*this) {
-    // parameters.addParameterListener("filter_type", this);
-    // parameters.addParameterListener("low_split", this);
+                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("gain1", 1),
+                                                                         "Gain 1",
+                                                                         juce::NormalisableRange<float>(-5, 5, .1f),
+                                                                         0.f),
+                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("gain2", 1),
+                                                                         "Gain2",
+                                                                         juce::NormalisableRange<float>(-5, 5, .1f),
+                                                                         0.f),
+                     }){
+    parameters.addParameterListener("gain1", this);
+    parameters.addParameterListener("gain2", this);
     // parameters.addParameterListener("high_split", this);
 }
 
 void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {
-    // if (parameterID == "low_split") {
-    //     crossover.setLowFreq(newValue);
-    //     lrCrossover.setLowFreq(newValue);
-    // } else if (parameterID == "high_split") {
-    //     crossover.setHighFreq(newValue);
-    //     lrCrossover.setLowFreq(newValue);
-    // } else if (parameterID == "filter_type") {
-    //     filterType.store(static_cast<size_t>(newValue));
-    //     if (filterType.load() == 0) {
-    //         setLatencySamples(crossover.getLatency());
-    //     } else {
-    //         setLatencySamples(0);
-    //     }
-    // }
+    if (parameterID == "gain1") {
+        gain1.setGainDecibels(newValue);
+    } else {
+        gain2.setGainDecibels(newValue);
+    }
 }
 
 PluginProcessor::~PluginProcessor() {
@@ -118,8 +99,8 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
                                                           getMainBusNumOutputChannels()));
     juce::dsp::ProcessSpec spec{sampleRate, static_cast<juce::uint32> (samplesPerBlock),
                                 channels};
-    crossover.prepare(spec);
-    lrCrossover.prepare(spec);
+    gain1.prepare(spec);
+    gain2.prepare(spec);
 }
 
 void PluginProcessor::releaseResources() {
@@ -150,33 +131,10 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
 void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                    juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
-    juce::ignoreUnused(buffer);
-
-//    juce::dsp::AudioBlock<float> block(buffer);
-//    auto outputBand = static_cast<size_t>(parameters.getRawParameterValue("output_band")->load());
-//    if (filterType.load() == 0) {
-//        crossover.split(block);
-//        if (outputBand == 0) {
-//            block.copyFrom(crossover.getLowBlock());
-//        } else if (outputBand == 1) {
-//            block.copyFrom(crossover.getMidBlock());
-//        } else if (outputBand == 2) {
-//            block.copyFrom(crossover.getHighBlock());
-//        } else {
-//            crossover.combine(block);
-//        }
-//    } else {
-//        lrCrossover.split(block);
-//        if (outputBand == 0) {
-//            block.copyFrom(lrCrossover.getLowBlock());
-//        } else if (outputBand == 1) {
-//            block.copyFrom(lrCrossover.getMidBlock());
-//        } else if (outputBand == 2) {
-//            block.copyFrom(lrCrossover.getHighBlock());
-//        } else {
-//            lrCrossover.combine(block);
-//        }
-//    }
+    juce::dsp::AudioBlock<float> block(buffer);
+    juce::dsp::ProcessContextReplacing<float> context(block);
+    gain1.process(context);
+    gain2.process(context);
 }
 
 //==============================================================================

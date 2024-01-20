@@ -36,6 +36,9 @@ namespace zlPanel {
             std::unique_ptr<zlInterface::CompactCombobox> box2;
             juce::StringArray choices = {"6", "12", "18"};
 
+            std::unique_ptr<zlInterface::Dragger2D> dragger;
+            juce::OwnedArray<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachments;
+
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainPanel)
         };
 

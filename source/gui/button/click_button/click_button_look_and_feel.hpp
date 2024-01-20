@@ -21,18 +21,6 @@ namespace zlInterface {
             drawable->replaceColour(juce::Colour(0, 0, 0), uiBase.getTextColor());
         }
 
-        // void drawButtonBackground(juce::Graphics &g, juce::Button &button, const juce::Colour &backgroundColour,
-        //                           bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override {
-        //     juce::ignoreUnused(backgroundColour, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
-        //     juce::Path path;
-        //     const auto bound = button.getLocalBounds().toFloat();
-        //     path.addRoundedRectangle(bound.getX(), bound.getY(), bound.getWidth(), bound.getHeight(),
-        //                              cornerSize.load(), cornerSize.load(),
-        //                              curveTL.load(), curveTR.load(), curveBL.load(), curveBR.load());
-        //     g.setColour(uiBase.getTextInactiveColor());
-        //     g.fillPath(path);
-        // }
-
         void drawDrawableButton(juce::Graphics &g, juce::DrawableButton &button, bool shouldDrawButtonAsHighlighted,
                                 bool shouldDrawButtonAsDown) override {
             juce::ignoreUnused(button);

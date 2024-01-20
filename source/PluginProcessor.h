@@ -10,6 +10,7 @@
 
 class PluginProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener {
 public:
+    juce::AudioProcessorValueTreeState parameters;
     PluginProcessor();
 
     ~PluginProcessor() override;
@@ -53,9 +54,7 @@ public:
     void parameterChanged(const juce::String &parameterID, float newValue) override;
 
 private:
-    juce::AudioProcessorValueTreeState parameters;
-    std::atomic<size_t> filterType;
-    zl_crossover::FIRCrossover<float> crossover;
-    zl_crossover::LRCrossover<float> lrCrossover;
+
+    juce::dsp::Gain<float> gain1, gain2;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
