@@ -17,8 +17,7 @@
 namespace zlInterface {
     class DraggerLookAndFeel final : public juce::LookAndFeel_V4 {
     public:
-        explicit DraggerLookAndFeel(UIBase &base) : uiBase(base) {
-        }
+        explicit DraggerLookAndFeel(UIBase &base) : uiBase(base) {}
 
         void drawToggleButton(juce::Graphics &g, juce::ToggleButton &button,
                               bool shouldDrawButtonAsHighlighted,

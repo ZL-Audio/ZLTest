@@ -7,8 +7,8 @@
 //
 // You should have received a copy of the GNU General Public License along with ZLEqualizer. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ZLTest_DRAGGER_2_D_HPP
-#define ZLTest_DRAGGER_2_D_HPP
+#ifndef ZLTest_DRAGGER_COMPONENT_HPP
+#define ZLTest_DRAGGER_COMPONENT_HPP
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -16,11 +16,11 @@
 #include "dragger_look_and_feel.hpp"
 
 namespace zlInterface {
-    class Dragger2D final : public juce::Component, private juce::Slider::Listener {
+    class Dragger final : public juce::Component {
     public:
-        explicit Dragger2D(UIBase &base);
+        explicit Dragger(UIBase &base);
 
-        ~Dragger2D() override;
+        ~Dragger() override;
 
         void mouseDown(const juce::MouseEvent &event) override;
 
@@ -32,9 +32,40 @@ namespace zlInterface {
 
         void resized() override;
 
-        inline juce::Slider &getHorizonS() { return horizonS; }
+        juce::Slider &getWheelSlider() {return wheelS;}
 
-        inline juce::Slider &getVerticalS() { return verticalS; }
+        void setXPortion(float x);
+
+        void setYPortion(float y);
+
+        float getXPortion() const;
+
+        float getYPortion() const;
+
+        class Listener {
+        public:
+            virtual ~Listener() = default;
+
+            virtual void draggerValueChanged(Dragger *dragger) = 0;
+
+            virtual void dragStarted(Dragger *dragger) = 0;
+
+            virtual void dragEnded(Dragger *dragger) = 0;
+        };
+
+        /** Adds a listener to be called when this slider's value changes. */
+        void addListener(Listener *listener);
+
+        /** Removes a previously-registered listener. */
+        void removeListener(Listener *listener);
+
+        void setPadding(const float left, const float right,
+            const float uppper, const float bottom) {
+            lPadding = left;
+            rPadding = right;
+            uPadding = uppper;
+            bPadding = bottom;
+        }
 
     private:
         UIBase &uiBase;
@@ -44,11 +75,15 @@ namespace zlInterface {
         juce::ComponentDragger dragger;
         juce::ComponentBoundsConstrainer constrainer;
         std::atomic<bool> isSelected;
+        std::atomic<float> xPortion, yPortion;
 
-        juce::Slider horizonS, verticalS, wheelS;
+        juce::Rectangle<float> buttonArea;
+        float lPadding, rPadding, uPadding, bPadding;
 
-        void sliderValueChanged(juce::Slider *slider) override;
+        juce::Slider wheelS;
+
+        juce::ListenerList<Listener> listeners;
     };
 } // zlInterface
 
-#endif //ZLTest_DRAGGER_2_D_HPP
+#endif //ZLTest_DRAGGER_COMPONENT_HPP
