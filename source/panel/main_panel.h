@@ -24,20 +24,20 @@ namespace zlPanel {
         private:
             zlInterface::UIBase uiBase;
 
-            std::unique_ptr<zlInterface::RotarySlider> slider;
-
-            std::unique_ptr<zlInterface::TwoValueRotarySlider> slider2;
-
-            std::unique_ptr<zlInterface::CompactLinearSlider> slider3;
-
-            std::unique_ptr<zlInterface::CompactButton> button1;
-
-            std::unique_ptr<zlInterface::RegularCombobox> box1;
-            std::unique_ptr<zlInterface::CompactCombobox> box2;
-            juce::StringArray choices = {"6", "12", "18"};
-
-            std::unique_ptr<zlInterface::Dragger> dragger;
-            juce::OwnedArray<zlInterface::DraggerParameterAttach> draggerAttachments;
+            // std::unique_ptr<zlInterface::RotarySlider> slider;
+            //
+            // std::unique_ptr<zlInterface::TwoValueRotarySlider> slider2;
+            //
+            // std::unique_ptr<zlInterface::CompactLinearSlider> slider3;
+            //
+            // std::unique_ptr<zlInterface::CompactButton> button1;
+            //
+            // std::unique_ptr<zlInterface::RegularCombobox> box1;
+            // std::unique_ptr<zlInterface::CompactCombobox> box2;
+            // juce::StringArray choices = {"6", "12", "18"};
+            //
+            // std::unique_ptr<zlInterface::Dragger> dragger;
+            // juce::OwnedArray<zlInterface::DraggerParameterAttach> draggerAttachments;
 
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainPanel)
         };

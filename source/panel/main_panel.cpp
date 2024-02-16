@@ -7,9 +7,9 @@
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p) : uiBase() {
         juce::ignoreUnused(p);
-        slider2 = std::make_unique<zlInterface::TwoValueRotarySlider>("Freq", uiBase);
-        slider2->setShowSlider2(true);
-        addAndMakeVisible(*slider2);
+        // slider2 = std::make_unique<zlInterface::TwoValueRotarySlider>("Freq", uiBase);
+        // slider2->setShowSlider2(true);
+        // addAndMakeVisible(*slider2);
         // slider3 = std::make_unique<zlInterface::CompactLinearSlider>("Freq", uiBase);
         // slider3->getSlider().setDoubleClickReturnValue(false, 0.0, juce::ModifierKeys::noModifiers);
         // slider3->getSlider().setSliderSnapsToMousePosition(false);
@@ -35,6 +35,13 @@ namespace zlPanel {
 
     void MainPanel::paint(juce::Graphics &g) {
         juce::ignoreUnused(g);
+        auto bound = getLocalBounds().toFloat();
+        const auto leftBound = bound.removeFromLeft(bound.getWidth() * .33333f);
+        const auto rightBound = bound.removeFromRight(bound.getWidth() * .5f);
+        uiBase.drawShadowEllipse(g, leftBound, uiBase.getFontSize(), {});
+        uiBase.drawInnerShadowEllipse(g, rightBound, uiBase.getFontSize(), {});
+        bound = uiBase.drawShadowEllipse(g, bound, uiBase.getFontSize(), {});
+        uiBase.drawInnerShadowEllipse(g, bound, uiBase.getFontSize() * .5f, {.flip = true});
     }
 
     void MainPanel::resized() {
@@ -44,7 +51,7 @@ namespace zlPanel {
         // dragger->setPadding(uiBase.getFontSize(), uiBase.getFontSize(),
         //                     uiBase.getFontSize(), uiBase.getFontSize());
 
-        slider2->setBounds(getLocalBounds());
+        // slider2->setBounds(getLocalBounds());
         // slider3->getSlider().setMouseDragSensitivity(getLocalBounds().getWidth());
         // slider3->setBounds(getLocalBounds());
         // button1->setBounds(getLocalBounds());
