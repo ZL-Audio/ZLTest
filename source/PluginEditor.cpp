@@ -9,7 +9,7 @@ PluginEditor::PluginEditor(PluginProcessor &p)
     setSize(400, 200);
     addAndMakeVisible(mainPanel);
 
-    getConstrainer()->setFixedAspectRatio(3.f);
+    getConstrainer()->setFixedAspectRatio(2.f);
     setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
 }
 
