@@ -4,6 +4,11 @@ PluginEditor::PluginEditor(PluginProcessor &p)
         : AudioProcessorEditor(&p), processorRef(p), mainPanel(p) {
     juce::ignoreUnused(processorRef);
 
+    // set font
+    const auto sourceCodePro = juce::Typeface::createSystemTypefaceFor(
+        BinaryData::MiSansLatinMedium_ttf, BinaryData::MiSansLatinMedium_ttfSize);
+    juce::LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(sourceCodePro);
+
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(400, 200);

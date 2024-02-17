@@ -36,6 +36,15 @@ namespace zlPanel {
     void MainPanel::paint(juce::Graphics &g) {
         juce::ignoreUnused(g);
         g.fillAll(juce::Colours::white);
+
+        g.setColour(juce::Colours::black);
+        g.setFont(uiBase.getFontSize() * 2);
+
+        auto leftBound = getLocalBounds().toFloat();
+        const auto rightBound = leftBound.removeFromRight(leftBound.getWidth() * .5f);
+
+        g.drawText("test", leftBound, juce::Justification::centred);
+        g.drawText("test", rightBound.toNearestInt(), juce::Justification::centred);
         // auto bound = getLocalBounds().toFloat();
         // const auto leftBound = bound.removeFromLeft(bound.getWidth() * .33333f);
         // const auto rightBound = bound.removeFromRight(bound.getWidth() * .5f);
@@ -61,23 +70,23 @@ namespace zlPanel {
         // box2->setBounds(bound.toNearestInt());
         // dragger->setBounds(bound.toNearestInt());
 
-        juce::Grid grid;
-        using Track = juce::Grid::TrackInfo;
-        using Fr = juce::Grid::Fr;
-
-        grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
-        grid.templateColumns = {
-            Track(Fr(30)), Track(Fr(30)), Track(Fr(30)), Track(Fr(30)),
-        };
-
-        grid.items = {
-            juce::GridItem(*slider2).withArea(1, 1, 3, 3),
-            juce::GridItem(*button1).withArea(1, 3),
-            juce::GridItem(*box2).withArea(1, 4),
-            juce::GridItem(*dragger).withArea(2, 3, 3, 5)
-        };
-
-        grid.setGap(juce::Grid::Px(uiBase.getFontSize()));
-        grid.performLayout(bound.toNearestInt());
+        // juce::Grid grid;
+        // using Track = juce::Grid::TrackInfo;
+        // using Fr = juce::Grid::Fr;
+        //
+        // grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
+        // grid.templateColumns = {
+        //     Track(Fr(30)), Track(Fr(30)), Track(Fr(30)), Track(Fr(30)),
+        // };
+        //
+        // grid.items = {
+        //     juce::GridItem(*slider2).withArea(1, 1, 3, 3),
+        //     juce::GridItem(*button1).withArea(1, 3),
+        //     juce::GridItem(*box2).withArea(1, 4),
+        //     juce::GridItem(*dragger).withArea(2, 3, 3, 5)
+        // };
+        //
+        // grid.setGap(juce::Grid::Px(uiBase.getFontSize()));
+        // grid.performLayout(bound.toNearestInt());
     }
 }
