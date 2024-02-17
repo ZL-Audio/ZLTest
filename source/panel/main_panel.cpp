@@ -35,18 +35,22 @@ namespace zlPanel {
 
     void MainPanel::paint(juce::Graphics &g) {
         juce::ignoreUnused(g);
+        g.fillAll(juce::Colours::white);
         auto bounds = getLocalBounds().toFloat();
-        bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 0.5f, {});
+        bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 1.f, {});
         bounds = uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.15f, {.flip = true});
-        g.setFont(uiBase.getFontSize() * 2);
-        g.drawText("test", bounds, juce::Justification::top);
-        g.drawText("test", bounds.toNearestInt(), juce::Justification::bottom);
+        g.setFont(uiBase.getFontSize());
+        g.setColour(juce::Colours::black);
+        g.drawText("test", bounds, juce::Justification::centredTop);
+        g.drawText("test", bounds.toNearestInt(), juce::Justification::centredBottom);
+        g.setColour(juce::Colours::black.withAlpha(1.f));
+        g.drawText("test", bounds.toNearestInt(), juce::Justification::centred);
     }
 
     void MainPanel::resized() {
-        // auto bound = getLocalBounds().toFloat();
-        // auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
-        // uiBase.setFontSize(fontSize);
+        auto bound = getLocalBounds().toFloat();
+        auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
+        uiBase.setFontSize(fontSize);
         //
         // juce::Grid grid;
         // using Track = juce::Grid::TrackInfo;
