@@ -11,6 +11,7 @@ namespace zlPanel {
           slider2("test2", base) {
         addAndMakeVisible(slider1);
         addAndMakeVisible(slider2);
+        setBufferedToImage(true);
     }
 
     void RightSubPanel::resized() {
