@@ -27,11 +27,17 @@ namespace zlInterface {
 
         ~DraggerParameterAttach() override;
 
-    private:
+        void sendInitialUpdate();
+
+        void enableX(const bool f) { isXAttached.store(f); }
+
+        void enableY(const bool f) { isYAttached.store(f); }
+
         void setX(float newValue) const;
 
         void setY(float newValue) const;
 
+    private:
         void draggerValueChanged(Dragger *dragger) override;
 
         void dragStarted(Dragger *dragger) override;
@@ -41,8 +47,7 @@ namespace zlInterface {
         Dragger &dragger;
         juce::ParameterAttachment attachmentX, attachmentY;
         juce::NormalisableRange<float> rangeX, rangeY;
-
-        // bool ignoreCallbacks = false;
+        std::atomic<bool> isXAttached{true}, isYAttached{true};
     };
 } // zlInterface
 

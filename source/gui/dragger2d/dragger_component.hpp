@@ -28,11 +28,9 @@ namespace zlInterface {
 
         void mouseDrag(const juce::MouseEvent &event) override;
 
-        void mouseWheelMove(const juce::MouseEvent &event, const juce::MouseWheelDetails &wheel) override;
-
         void resized() override;
 
-        juce::Slider &getWheelSlider() {return wheelS;}
+        juce::ToggleButton &getButton() { return button; }
 
         void setXPortion(float x);
 
@@ -41,6 +39,10 @@ namespace zlInterface {
         float getXPortion() const;
 
         float getYPortion() const;
+
+        void setScale(const float x) {scale.store(x);}
+
+        float getScale() const {return scale.load();}
 
         class Listener {
         public:
@@ -60,12 +62,16 @@ namespace zlInterface {
         void removeListener(Listener *listener);
 
         void setPadding(const float left, const float right,
-            const float uppper, const float bottom) {
+                        const float uppper, const float bottom) {
             lPadding = left;
             rPadding = right;
             uPadding = uppper;
             bPadding = bottom;
         }
+
+        void setActive(const bool f) { draggerLAF.setActive(f); }
+
+        DraggerLookAndFeel &getLAF() {return draggerLAF;}
 
     private:
         UIBase &uiBase;
@@ -78,9 +84,8 @@ namespace zlInterface {
         std::atomic<float> xPortion, yPortion;
 
         juce::Rectangle<float> buttonArea;
-        float lPadding, rPadding, uPadding, bPadding;
-
-        juce::Slider wheelS;
+        float lPadding {0.f}, rPadding {0.f}, uPadding {0.f}, bPadding {0.f};
+        std::atomic<float> scale {1.f};
 
         juce::ListenerList<Listener> listeners;
     };

@@ -5,52 +5,36 @@
 #include "main_panel.h"
 
 namespace zlPanel {
-    MainPanel::MainPanel(PluginProcessor &p) : uiBase() {
+    MainPanel::MainPanel(PluginProcessor &p)
+        : uiBase(),
+          leftPanel(p, uiBase) {
         juce::ignoreUnused(p);
-        // slider2 = std::make_unique<zlInterface::TwoValueRotarySlider>("Freq", uiBase);
-        // slider2->setShowSlider2(true);
-        // addAndMakeVisible(*slider2);
-        // // slider3 = std::make_unique<zlInterface::CompactLinearSlider>("Freq", uiBase);
-        // // slider3->getSlider().setDoubleClickReturnValue(false, 0.0, juce::ModifierKeys::noModifiers);
-        // // slider3->getSlider().setSliderSnapsToMousePosition(false);
-        // // addAndMakeVisible(*slider3);
-        // button1 = std::make_unique<zlInterface::CompactButton>("B", uiBase);
-        // addAndMakeVisible(*button1);
-        // // box1 = std::make_unique<zlInterface::RegularCombobox>("Slope", choices, uiBase);
-        // // addAndMakeVisible(*box1);
-        // box2 = std::make_unique<zlInterface::CompactCombobox>("Slope", choices, uiBase);
-        // addAndMakeVisible(*box2);
-        // dragger = std::make_unique<zlInterface::Dragger>(uiBase);
-        // auto *para1 = p.parameters.getParameter("gain1"), *para2 = p.parameters.getParameter("gain2");
-        // draggerAttachments.add(std::make_unique<zlInterface::DraggerParameterAttach>(
-        //     *para1, para1->getNormalisableRange(),
-        //     *para2, para2->getNormalisableRange(),
-        //     *dragger, p.parameters.undoManager));
-        // addAndMakeVisible(*dragger);
+        addAndMakeVisible(leftPanel);
     }
 
     MainPanel::~MainPanel() {
     }
 
-
     void MainPanel::paint(juce::Graphics &g) {
         juce::ignoreUnused(g);
-        g.fillAll(juce::Colours::white);
-        auto bounds = getLocalBounds().toFloat();
-        bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 1.f, {});
-        bounds = uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.15f, {.flip = true});
-        g.setFont(uiBase.getFontSize());
-        g.setColour(juce::Colours::black);
-        g.drawText("test", bounds, juce::Justification::centredTop);
-        g.drawText("test", bounds.toNearestInt(), juce::Justification::centredBottom);
-        g.setColour(juce::Colours::black.withAlpha(1.f));
-        g.drawText("test", bounds.toNearestInt(), juce::Justification::centred);
+        // g.fillAll(juce::Colours::white);
+        // auto bounds = getLocalBounds().toFloat();
+        // bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 1.f, {});
+        // bounds = uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.15f, {.flip = true});
+        // g.setFont(uiBase.getFontSize());
+        // g.setColour(juce::Colours::black);
+        // g.drawText("test", bounds, juce::Justification::centredTop);
+        // g.drawText("test", bounds.toNearestInt(), juce::Justification::centredBottom);
+        // g.setColour(juce::Colours::black.withAlpha(1.f));
+        // g.drawText("test", bounds.toNearestInt(), juce::Justification::centred);
     }
 
     void MainPanel::resized() {
         auto bound = getLocalBounds().toFloat();
         auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
         uiBase.setFontSize(fontSize);
+
+        leftPanel.setBounds(getLocalBounds());
         //
         // juce::Grid grid;
         // using Track = juce::Grid::TrackInfo;

@@ -25,6 +25,8 @@ PluginProcessor::PluginProcessor()
     parameters.addParameterListener("gain1", this);
     parameters.addParameterListener("gain2", this);
     // parameters.addParameterListener("high_split", this);
+    gain1.setGainDecibels(0);
+    gain2.setGainDecibels(0);
 }
 
 void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {

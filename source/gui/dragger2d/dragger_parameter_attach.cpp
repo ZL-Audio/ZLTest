@@ -20,8 +20,6 @@ namespace zlInterface {
           attachmentX(parameterX, [this](const float f) { setX(f); }, undoManager),
           attachmentY(parameterY, [this](const float f) { setY(f); }, undoManager),
           rangeX(std::move(nRangeX)), rangeY(std::move(nRangeY)) {
-        attachmentX.sendInitialUpdate();
-        attachmentY.sendInitialUpdate();
         dragger.addListener(this);
     }
 
@@ -29,12 +27,17 @@ namespace zlInterface {
         dragger.removeListener(this);
     }
 
+    void DraggerParameterAttach::sendInitialUpdate() {
+        attachmentX.sendInitialUpdate();
+        attachmentY.sendInitialUpdate();
+    }
+
     void DraggerParameterAttach::setX(const float newValue) const {
-        dragger.setXPortion(rangeX.convertTo0to1(newValue));
+        dragger.setXPortion(rangeX.convertTo0to1(rangeX.snapToLegalValue(newValue)));
     }
 
     void DraggerParameterAttach::setY(const float newValue) const {
-        dragger.setYPortion(rangeY.convertTo0to1(newValue));
+        dragger.setYPortion(rangeY.convertTo0to1(rangeY.snapToLegalValue(newValue)));
     }
 
     void DraggerParameterAttach::dragStarted(Dragger *) {
@@ -48,7 +51,7 @@ namespace zlInterface {
     }
 
     void DraggerParameterAttach::draggerValueChanged(Dragger *) {
-        attachmentX.setValueAsPartOfGesture(rangeX.convertFrom0to1(dragger.getXPortion()));
-        attachmentY.setValueAsPartOfGesture(rangeY.convertFrom0to1(dragger.getYPortion()));
+        if (isXAttached.load()) attachmentX.setValueAsPartOfGesture(rangeX.convertFrom0to1(dragger.getXPortion()));
+        if (isYAttached.load()) attachmentY.setValueAsPartOfGesture(rangeY.convertFrom0to1(dragger.getYPortion()));
     }
 } // zlInterface

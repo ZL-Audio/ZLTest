@@ -8,6 +8,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
 #include "../gui/gui.hpp"
+#include "left_panel.hpp"
 
 namespace zlPanel {
 
@@ -24,6 +25,8 @@ namespace zlPanel {
         private:
             zlInterface::UIBase uiBase;
 
+            LeftPanel leftPanel;
+
             // std::unique_ptr<zlInterface::RotarySlider> slider;
             //
             std::unique_ptr<zlInterface::TwoValueRotarySlider> slider2;
@@ -36,8 +39,8 @@ namespace zlPanel {
             std::unique_ptr<zlInterface::CompactCombobox> box2;
             juce::StringArray choices = {"6", "12", "18"};
             //
-            std::unique_ptr<zlInterface::Dragger> dragger;
-            juce::OwnedArray<zlInterface::DraggerParameterAttach> draggerAttachments;
+            // std::unique_ptr<zlInterface::Dragger> dragger;
+            // juce::OwnedArray<zlInterface::DraggerParameterAttach> draggerAttachments;
 
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainPanel)
         };
