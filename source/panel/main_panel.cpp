@@ -7,10 +7,10 @@
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p)
         : uiBase(),
-          // leftPanel(p, uiBase),
+          leftPanel(p, uiBase),
           rightPanel(p, uiBase) {
         juce::ignoreUnused(p);
-        // addAndMakeVisible(leftPanel);
+        addAndMakeVisible(leftPanel);
         addAndMakeVisible(rightPanel);
     }
 
@@ -35,6 +35,8 @@ namespace zlPanel {
         auto bound = getLocalBounds().toFloat();
         auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
         uiBase.setFontSize(fontSize);
+
+        leftPanel.setBounds(bound.removeFromLeft(bound.getWidth() * .5f).toNearestInt());
 
         bound.removeFromBottom(bound.getHeight() * .8f);
 

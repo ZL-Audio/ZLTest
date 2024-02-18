@@ -26,7 +26,7 @@ namespace zlPanel {
         private:
             zlInterface::UIBase uiBase;
 
-            // LeftPanel leftPanel;
+            LeftPanel leftPanel;
 
             RightPanel rightPanel;
 
