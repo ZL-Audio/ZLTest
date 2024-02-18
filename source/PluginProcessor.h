@@ -56,5 +56,6 @@ public:
 private:
 
     juce::dsp::Gain<float> gain1, gain2;
+    juce::CriticalSection gainLock;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
