@@ -48,6 +48,7 @@ namespace zlPanel {
         addAndMakeVisible(dragger);
         dragger.getButton().addComponentListener(&subPanel);
         addAndMakeVisible(subPanel);
+        subPanel.setAlwaysOnTop(true);
     }
 
     void LeftPanel::resized() {
