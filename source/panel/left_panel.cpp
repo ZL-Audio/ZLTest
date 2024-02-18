@@ -11,7 +11,7 @@ namespace zlPanel {
           slider2("test2", base) {
         addAndMakeVisible(slider1);
         addAndMakeVisible(slider2);
-        // setBufferedToImage(true);
+        setBufferedToImage(true);
     }
 
     void LeftSubPanel::resized() {
@@ -49,7 +49,7 @@ namespace zlPanel {
         addAndMakeVisible(dragger);
         dragger.getButton().addComponentListener(&subPanel);
         addAndMakeVisible(subPanel);
-        // setBufferedToImage(true);
+        setBufferedToImage(true);
     }
 
     void LeftPanel::resized() {

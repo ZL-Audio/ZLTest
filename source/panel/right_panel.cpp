@@ -11,7 +11,7 @@ namespace zlPanel {
           slider2("test2", base) {
         addAndMakeVisible(slider1);
         addAndMakeVisible(slider2);
-        // setBufferedToImage(true);
+        setBufferedToImage(true);
     }
 
     void RightSubPanel::resized() {
@@ -34,7 +34,7 @@ namespace zlPanel {
     RightPanel::RightPanel(PluginProcessor &p, zlInterface::UIBase &base)
         : uiBase(base), callOutBoxLAF(base) {
         juce::ignoreUnused(p);
-        // setBufferedToImage(true);
+        setBufferedToImage(true);
     }
 
     void RightPanel::paint(juce::Graphics &g) {
