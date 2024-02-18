@@ -9,6 +9,7 @@
 #include "../PluginProcessor.h"
 #include "../gui/gui.hpp"
 #include "left_panel.hpp"
+#include "right_panel.hpp"
 
 namespace zlPanel {
 
@@ -25,7 +26,9 @@ namespace zlPanel {
         private:
             zlInterface::UIBase uiBase;
 
-            LeftPanel leftPanel;
+            // LeftPanel leftPanel;
+
+            RightPanel rightPanel;
 
             // std::unique_ptr<zlInterface::RotarySlider> slider;
             //

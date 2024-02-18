@@ -7,9 +7,11 @@
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p)
         : uiBase(),
-          leftPanel(p, uiBase) {
+          // leftPanel(p, uiBase),
+          rightPanel(p, uiBase) {
         juce::ignoreUnused(p);
-        addAndMakeVisible(leftPanel);
+        // addAndMakeVisible(leftPanel);
+        addAndMakeVisible(rightPanel);
     }
 
     MainPanel::~MainPanel() {
@@ -17,7 +19,7 @@ namespace zlPanel {
 
     void MainPanel::paint(juce::Graphics &g) {
         juce::ignoreUnused(g);
-        // g.fillAll(juce::Colours::white);
+        g.fillAll(juce::Colours::white);
         // auto bounds = getLocalBounds().toFloat();
         // bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 1.f, {});
         // bounds = uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.15f, {.flip = true});
@@ -34,7 +36,9 @@ namespace zlPanel {
         auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
         uiBase.setFontSize(fontSize);
 
-        leftPanel.setBounds(getLocalBounds());
+        bound.removeFromBottom(bound.getHeight() * .8f);
+
+        rightPanel.setBounds(bound.toNearestInt());
         //
         // juce::Grid grid;
         // using Track = juce::Grid::TrackInfo;

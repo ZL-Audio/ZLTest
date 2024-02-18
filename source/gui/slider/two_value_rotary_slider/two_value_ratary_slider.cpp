@@ -7,7 +7,7 @@
 namespace zlInterface {
     TwoValueRotarySlider::TwoValueRotarySlider(const juce::String &labelText, UIBase &base)
         : uiBase(base), slider1LAF(base), slider2LAF(base),
-          labelLookAndFeel(base), labelLookAndFeel1(base), labelLookAndFeel2(base),
+          labelLookAndFeel(base), labelLookAndFeel1(base), labelLookAndFeel2(base), textBoxLAF(base),
           animator{} {
         juce::ignoreUnused(uiBase);
         for (auto const s: {&slider1, &slider2}) {
@@ -21,6 +21,8 @@ namespace zlInterface {
         slider1.setLookAndFeel(&slider1LAF);
         slider2LAF.setEditable(showSlider2.load());
         slider2.setLookAndFeel(&slider2LAF);
+        slider1.addListener(this);
+        slider2.addListener(this);
 
         addAndMakeVisible(slider1);
         addAndMakeVisible(slider2);
@@ -48,9 +50,27 @@ namespace zlInterface {
 
         setEditable(true);
         setShowSlider2(false);
+
+        label1.setInterceptsMouseClicks(true, false);
+        label2.setInterceptsMouseClicks(true, false);
+        label1.setEditable(false, true);
+        label2.setEditable(false, true);
+
+        label1.setJustificationType(juce::Justification::centred);
+        label2.setJustificationType(juce::Justification::centred);
+        label1.addListener(this);
+        label2.addListener(this);
     }
 
     TwoValueRotarySlider::~TwoValueRotarySlider() {
+        slider1.removeListener(this);
+        slider2.removeListener(this);
+        label1.removeListener(this);
+        label2.removeListener(this);
+        // label1.removeMouseListener(this);
+        // label2.removeMouseListener(this);
+        // this->removeMouseListener(&label1);
+        // this->removeMouseListener(&label2);
         slider1.setLookAndFeel(nullptr);
         slider2.setLookAndFeel(nullptr);
         for (auto &l: {&label, &label1, &label2}) {
@@ -64,7 +84,7 @@ namespace zlInterface {
         if (value < 10000 && labelToDisplay.contains(".")) {
             labelToDisplay = juce::String(value).substring(0, 5);
         }
-        if (value > 10000) {
+        if (value >= 10000) {
             value = value / 1000;
             labelToDisplay = juce::String(value).substring(0, 4) + "K";
         }
@@ -78,8 +98,8 @@ namespace zlInterface {
         bound = bound.withSizeKeepingCentre(bound.getWidth() - lrPad.load(),
                                             bound.getHeight() - ubPad.load());
 
-        auto labelBound = bound.withSizeKeepingCentre(bound.getWidth() * 0.7f,
-                                                      bound.getHeight() * 0.6f);
+        auto labelBound = bound.withSizeKeepingCentre(bound.getWidth() * 0.6f,
+                                                      bound.getHeight() * 0.5f);
         if (showSlider2.load()) {
             slider2LAF.setEditable(true);
             const auto valueBound1 = labelBound.removeFromTop(labelBound.getHeight() * 0.5f);
@@ -90,6 +110,7 @@ namespace zlInterface {
             labelLookAndFeel2.setJustification(juce::Justification::centredTop);
         } else {
             slider2LAF.setEditable(false);
+            labelBound = labelBound.withSizeKeepingCentre(labelBound.getWidth(), labelBound.getHeight() * .5f);
             label1.setBounds(labelBound.toNearestInt());
             label2.setBounds(0, 0, 0, 0);
             labelLookAndFeel1.setJustification(juce::Justification::centred);
@@ -145,6 +166,10 @@ namespace zlInterface {
 
         mouseOver.store(false);
 
+        if (this->contains(event.getMouseDownPosition())) {
+            return;
+        }
+
         if (animator.getAnimation(animationId) != nullptr)
             return;
         auto effect{
@@ -169,23 +194,15 @@ namespace zlInterface {
     }
 
     void TwoValueRotarySlider::mouseDoubleClick(const juce::MouseEvent &event) {
-        if (!showSlider2.load() || (event.mods.isLeftButtonDown() && !event.mods.isCommandDown())) {
-            slider1.mouseDoubleClick(event);
-            label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
-        } else {
-            slider2.mouseDoubleClick(event);
-            label2.setText(getDisplayValue(slider2), juce::dontSendNotification);
-        }
+        juce::ignoreUnused(event);
     }
 
     void TwoValueRotarySlider::mouseWheelMove(const juce::MouseEvent &event,
                                               const juce::MouseWheelDetails &wheel) {
         if (!showSlider2.load() || !event.mods.isCommandDown()) {
             slider1.mouseWheelMove(event, wheel);
-            label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
         } else {
             slider2.mouseWheelMove(event, wheel);
-            label2.setText(getDisplayValue(slider2), juce::dontSendNotification);
         }
     }
 
@@ -202,4 +219,61 @@ namespace zlInterface {
 
         setShowSlider2(showSlider2.load());
     }
+
+    void TwoValueRotarySlider::labelTextChanged(juce::Label *labelThatHasChanged) {
+        juce::ignoreUnused(labelThatHasChanged);
+    }
+
+    void TwoValueRotarySlider::editorShown(juce::Label *l, juce::TextEditor &editor) {
+        juce::ignoreUnused(l);
+        editor.setInputRestrictions(0, "-0123456789.kK");
+
+        labelLookAndFeel.setAlpha(0);
+        labelLookAndFeel1.setAlpha(1);
+        labelLookAndFeel2.setAlpha(1);
+
+        for (auto &ll: {&label, &label1, &label2}) {
+            ll->repaint();
+        }
+        editor.setJustification(juce::Justification::centred);
+        editor.setColour(juce::TextEditor::outlineColourId, uiBase.getTextColor());
+        editor.setColour(juce::TextEditor::highlightedTextColourId, uiBase.getTextColor());
+        editor.applyFontToAllText(uiBase.getFontSize() * FontHuge);
+        editor.applyColourToAllText(uiBase.getTextColor(), true);
+    }
+
+    void TwoValueRotarySlider::editorHidden(juce::Label *l, juce::TextEditor &editor) {
+        auto k = 1.0;
+        const auto text = editor.getText();
+        if (text.contains("k") || text.contains("K")) {
+            k = 1000.0;
+        }
+        const auto actualValue = text.getDoubleValue() * k;
+
+        if (l == &label1) {
+            slider1.setValue(actualValue, juce::sendNotificationAsync);
+        }
+        if (l == &label2) {
+            slider2.setValue(actualValue, juce::sendNotificationAsync);
+        }
+
+        labelLookAndFeel.setAlpha(1);
+        labelLookAndFeel1.setAlpha(0);
+        labelLookAndFeel2.setAlpha(0);
+
+        for (auto &ll: {&label, &label1, &label2}) {
+            ll->repaint();
+        }
+    }
+
+    void TwoValueRotarySlider::sliderValueChanged(juce::Slider *slider) {
+        if (slider == &slider1) {
+            label1.setText(getDisplayValue(slider1), juce::dontSendNotification);
+            label1.repaint();
+        }
+        if (slider == &slider2) {
+            label2.setText(getDisplayValue(slider2), juce::dontSendNotification);
+        }
+    }
+
 }

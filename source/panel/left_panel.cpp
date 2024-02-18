@@ -47,7 +47,7 @@ namespace zlPanel {
         juce::ignoreUnused(p);
         addAndMakeVisible(dragger);
         dragger.getButton().addComponentListener(&subPanel);
-        addAndMakeVisible(subPanel);
+        addChildComponent(subPanel);
         subPanel.setAlwaysOnTop(true);
     }
 
