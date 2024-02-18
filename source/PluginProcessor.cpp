@@ -31,8 +31,10 @@ PluginProcessor::PluginProcessor()
 
 void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {
     if (parameterID == "gain1") {
+        juce::ScopedLock lock(gainLock);
         gain1.setGainDecibels(newValue);
     } else {
+        juce::ScopedLock lock(gainLock);
         gain2.setGainDecibels(newValue);
     }
 }
@@ -135,6 +137,7 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     juce::ignoreUnused(midiMessages);
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
+    juce::ScopedLock lock(gainLock);
     gain1.process(context);
     gain2.process(context);
 }
