@@ -33,6 +33,7 @@ namespace zlPanel {
     RightPanel::RightPanel(PluginProcessor &p, zlInterface::UIBase &base)
         : uiBase(base), callOutBoxLAF(base) {
         juce::ignoreUnused(p);
+        setBufferedToImage(true);
     }
 
     void RightPanel::paint(juce::Graphics &g) {
