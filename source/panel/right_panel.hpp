@@ -11,7 +11,7 @@
 
 namespace zlPanel {
     class RightSubPanel final : public juce::Component,
-                               public juce::ComponentListener {
+                                public juce::ComponentListener {
     public:
         explicit RightSubPanel(zlInterface::UIBase &base);
 
