@@ -18,13 +18,14 @@ PluginProcessor::PluginProcessor()
                                                                          juce::NormalisableRange<float>(-5, 5, .1f),
                                                                          0.f),
                              std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("gain2", 1),
-                                                                         "Gain2",
+                                                                         "Gain 2",
                                                                          juce::NormalisableRange<float>(-5, 5, .1f),
                                                                          0.f),
                      }){
     parameters.addParameterListener("gain1", this);
     parameters.addParameterListener("gain2", this);
     // parameters.addParameterListener("high_split", this);
+    juce::ScopedLock lock(gainLock);
     gain1.setGainDecibels(0);
     gain2.setGainDecibels(0);
 }
@@ -103,6 +104,7 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
                                                           getMainBusNumOutputChannels()));
     juce::dsp::ProcessSpec spec{sampleRate, static_cast<juce::uint32> (samplesPerBlock),
                                 channels};
+    juce::ScopedLock lock(gainLock);
     gain1.prepare(spec);
     gain2.prepare(spec);
 }
