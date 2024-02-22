@@ -13,7 +13,7 @@ namespace zlPanel {
     class LeftSubPanel final : public juce::Component,
                                public juce::ComponentListener {
     public:
-        explicit LeftSubPanel(zlInterface::UIBase &base);
+        explicit LeftSubPanel(zlInterface::UIBase &base, bool isBuffered);
 
         void resized() override;
 
@@ -28,7 +28,7 @@ namespace zlPanel {
 
     class LeftPanel final : public juce::Component {
     public:
-        explicit LeftPanel(PluginProcessor &p, zlInterface::UIBase &base);
+        explicit LeftPanel(PluginProcessor &p, zlInterface::UIBase &base, bool isBuffered);
 
         void resized() override;
 
