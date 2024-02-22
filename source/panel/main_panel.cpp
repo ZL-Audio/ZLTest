@@ -7,11 +7,16 @@
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p)
         : uiBase(),
-          leftPanel(p, uiBase),
-          rightPanel(p, uiBase) {
+          leftPanel1(p, uiBase, true), leftPanel2(p, uiBase, false),
+          rightPanel1(p, uiBase, true), rightPanel2(p, uiBase, false),
+          lPanel1(uiBase, true), lPanel2(uiBase, false) {
         juce::ignoreUnused(p);
-        addAndMakeVisible(leftPanel);
-        addAndMakeVisible(rightPanel);
+        addAndMakeVisible(leftPanel1);
+        addAndMakeVisible(leftPanel2);
+        addAndMakeVisible(rightPanel1);
+        addAndMakeVisible(rightPanel2);
+        addAndMakeVisible(lPanel1);
+        addAndMakeVisible(lPanel2);
     }
 
     MainPanel::~MainPanel() {
@@ -33,32 +38,27 @@ namespace zlPanel {
 
     void MainPanel::resized() {
         auto bound = getLocalBounds().toFloat();
-        auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
+        // auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
+        auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 2.5f;
         uiBase.setFontSize(fontSize);
 
-        leftPanel.setBounds(bound.removeFromLeft(bound.getWidth() * .5f).toNearestInt());
+        juce::Grid grid;
+        using Track = juce::Grid::TrackInfo;
+        using Fr = juce::Grid::Fr;
 
-        bound.removeFromBottom(bound.getHeight() * .8f);
+        grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
+        grid.templateColumns = {
+            Track(Fr(30)), Track(Fr(30)), Track(Fr(30)),
+        };
 
-        rightPanel.setBounds(bound.toNearestInt());
-        //
-        // juce::Grid grid;
-        // using Track = juce::Grid::TrackInfo;
-        // using Fr = juce::Grid::Fr;
-        //
-        // grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
-        // grid.templateColumns = {
-        //     Track(Fr(30)), Track(Fr(30)), Track(Fr(30)), Track(Fr(30)),
-        // };
-        //
-        // grid.items = {
-        //     juce::GridItem(*slider2).withArea(1, 1, 3, 3),
-        //     juce::GridItem(*button1).withArea(1, 3),
-        //     juce::GridItem(*box2).withArea(1, 4),
-        //     juce::GridItem(*dragger).withArea(2, 3, 3, 5)
-        // };
-        //
-        // grid.setGap(juce::Grid::Px(uiBase.getFontSize()));
-        // grid.performLayout(bound.toNearestInt());
+        grid.items.add(leftPanel1);
+        grid.items.add(lPanel1);
+        grid.items.add(rightPanel1);
+        grid.items.add(leftPanel2);
+        grid.items.add(lPanel2);
+        grid.items.add(rightPanel2);
+
+
+        grid.performLayout(bound.toNearestInt());
     }
 }

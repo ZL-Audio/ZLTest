@@ -10,6 +10,7 @@
 #include "../gui/gui.hpp"
 #include "left_panel.hpp"
 #include "right_panel.hpp"
+#include "lines_panel.hpp"
 
 namespace zlPanel {
 
@@ -26,9 +27,11 @@ namespace zlPanel {
         private:
             zlInterface::UIBase uiBase;
 
-            LeftPanel leftPanel;
+            LeftPanel leftPanel1, leftPanel2;
 
-            RightPanel rightPanel;
+            RightPanel rightPanel1, rightPanel2;
+
+            LinesPanel lPanel1, lPanel2;
 
             // std::unique_ptr<zlInterface::RotarySlider> slider;
             //

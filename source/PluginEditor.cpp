@@ -11,10 +11,10 @@ PluginEditor::PluginEditor(PluginProcessor &p)
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(400, 200);
+    setSize(300, 200);
     addAndMakeVisible(mainPanel);
 
-    getConstrainer()->setFixedAspectRatio(2.f);
+    getConstrainer()->setFixedAspectRatio(1.5f);
     setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
 }
 

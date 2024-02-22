@@ -5,13 +5,13 @@
 #include "right_panel.hpp"
 
 namespace zlPanel {
-    RightSubPanel::RightSubPanel(zlInterface::UIBase &base)
+    RightSubPanel::RightSubPanel(zlInterface::UIBase &base, bool isBuffered)
         : uiBase(base),
           slider1("test1", base),
           slider2("test2", base) {
         addAndMakeVisible(slider1);
         addAndMakeVisible(slider2);
-        // setBufferedToImage(true);
+        setBufferedToImage(isBuffered);
     }
 
     void RightSubPanel::resized() {
@@ -31,10 +31,11 @@ namespace zlPanel {
         grid.performLayout(getLocalBounds());
     }
 
-    RightPanel::RightPanel(PluginProcessor &p, zlInterface::UIBase &base)
-        : uiBase(base), callOutBoxLAF(base) {
+    RightPanel::RightPanel(PluginProcessor &p, zlInterface::UIBase &base, bool isBuffered)
+        : uiBase(base), callOutBoxLAF(base),
+          isBufferedToImage(isBuffered) {
         juce::ignoreUnused(p);
-        // setBufferedToImage(true);
+        setBufferedToImage(isBuffered);
     }
 
     void RightPanel::paint(juce::Graphics &g) {
@@ -47,16 +48,15 @@ namespace zlPanel {
         if (getParentComponent() == nullptr) {
             return;
         }
-        auto content = std::make_unique<RightSubPanel>(uiBase);
+        auto content = std::make_unique<RightSubPanel>(uiBase, isBufferedToImage);
         content->setSize(juce::roundToInt(uiBase.getFontSize() * 6.f),
                          juce::roundToInt(uiBase.getFontSize() * 6.f));
 
         auto &box = juce::CallOutBox::launchAsynchronously(std::move(content),
                                                            getBounds(),
-                                                           getParentComponent());
+                                                           this);
         box.setLookAndFeel(&callOutBoxLAF);
         box.setArrowSize(0);
         box.sendLookAndFeelChange();
-        // boxPointer = &box;
     }
 } // zlPanel

@@ -5,13 +5,13 @@
 #include "left_panel.hpp"
 
 namespace zlPanel {
-    LeftSubPanel::LeftSubPanel(zlInterface::UIBase &base)
+    LeftSubPanel::LeftSubPanel(zlInterface::UIBase &base, bool isBuffered)
         : uiBase(base),
           slider1("test1", base),
           slider2("test2", base) {
         addAndMakeVisible(slider1);
         addAndMakeVisible(slider2);
-        // setBufferedToImage(true);
+        setBufferedToImage(isBuffered);
     }
 
     void LeftSubPanel::resized() {
@@ -43,13 +43,16 @@ namespace zlPanel {
         setBounds(popUpBound.toNearestInt());
     }
 
-    LeftPanel::LeftPanel(PluginProcessor &p, zlInterface::UIBase &base)
-        : uiBase(base), dragger(base), subPanel(base) {
+    LeftPanel::LeftPanel(PluginProcessor &p, zlInterface::UIBase &base, bool isBuffered)
+        : uiBase(base), dragger(base), subPanel(base, isBuffered) {
         juce::ignoreUnused(p);
         addAndMakeVisible(dragger);
         dragger.getButton().addComponentListener(&subPanel);
+        dragger.setXPortion(.5f);
+        dragger.setYPortion(.5f);
         addAndMakeVisible(subPanel);
-        // setBufferedToImage(true);
+        setBufferedToImage(isBuffered);
+        juce::ignoreUnused(uiBase);
     }
 
     void LeftPanel::resized() {

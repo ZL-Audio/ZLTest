@@ -13,7 +13,7 @@ namespace zlPanel {
     class RightSubPanel final : public juce::Component,
                                 public juce::ComponentListener {
     public:
-        explicit RightSubPanel(zlInterface::UIBase &base);
+        explicit RightSubPanel(zlInterface::UIBase &base, bool isBuffered);
 
         void resized() override;
 
@@ -24,7 +24,7 @@ namespace zlPanel {
 
     class RightPanel final : public juce::Component {
     public:
-        RightPanel(PluginProcessor &p, zlInterface::UIBase &base);
+        RightPanel(PluginProcessor &p, zlInterface::UIBase &base, bool isBuffered);
 
         void paint(juce::Graphics &g) override;
 
@@ -33,6 +33,8 @@ namespace zlPanel {
     private:
         zlInterface::UIBase &uiBase;
         zlInterface::CallOutBoxLAF callOutBoxLAF;
+
+        bool isBufferedToImage;
     };
 } // zlPanel
 
