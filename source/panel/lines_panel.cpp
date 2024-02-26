@@ -8,15 +8,16 @@ namespace zlPanel {
 
     LinesPanel::LinesPanel(zlInterface::UIBase &base, const bool isBuffered)
         : uiBase(base){
+        juce::ignoreUnused(uiBase);
         setBufferedToImage(isBuffered);
     }
 
     void LinesPanel::paint(juce::Graphics &g) {
         auto bound = getLocalBounds().toFloat();
-        auto thickness = uiBase.getFontSize() * .125f;
-        const auto interval = bound.getHeight() * .2f;
+        auto thickness = uiBase.getFontSize() * .125f * .125f;
+        const auto interval = bound.getHeight() * .1f;
         g.setColour(juce::Colours::black);
-        for (auto i = 0; i < 4; ++i) {
+        for (auto i = 0; i < 9; ++i) {
             bound.removeFromTop(interval);
             const juce::Line<float> line{bound.getTopLeft(), bound.getTopRight()};
             g.drawLine(line, thickness);
