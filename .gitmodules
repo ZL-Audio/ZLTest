@@ -8,3 +8,5 @@
 	branch = fix-warnings
 [submodule "friz"]
 	branch = fix-warnings
+[submodule "juce"]
+	branch = master
