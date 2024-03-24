@@ -132,6 +132,10 @@ jobs:
       shell: bash
       run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
 
+    - name: check libstdc++ version
+      shell: bash
+      run: clang++ -v
+
     - name: Pluginval setup
       working-directory: ${{ env.BUILD_DIR }}
       shell: bash
