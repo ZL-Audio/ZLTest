@@ -44,10 +44,20 @@ jobs:
 
     steps:
 
+    - name: check gcc version
+      if: ${{ matrix.name == 'Linux' }}
+      shell: bash
+      run: g++ -v
+
     # This is just easier than debugging different compilers on different platforms
     - name: Set up Clang
       if: ${{ matrix.name != 'macOS' }}
       uses: egor-tensin/setup-clang@v1
+
+    - name: check gcc version
+      if: ${{ matrix.name == 'Linux' }}
+      shell: bash
+      run: clang++ -v
 
     # This also starts up our "fake" display Xvfb, needed for pluginval
     - name: Install JUCE's Linux Deps
@@ -132,7 +142,8 @@ jobs:
       shell: bash
       run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
 
-    - name: check libstdc++ version
+    - name: check gcc version
+      if: ${{ matrix.name == 'Linux' }}
       shell: bash
       run: clang++ -v
 
