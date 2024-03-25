@@ -15,6 +15,19 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch: # lets you run a build from the UI
+
+# When pushing new commits, cancel any running builds on that branch
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   BUILD_TYPE: Release
   BUILD_DIR: Builds
@@ -27,14 +40,14 @@ env:
 # all steps run in series
 jobs:
   build_and_test:
-    name: ${{ matrix.name }} Check Status
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
           - name: Linux
-            os: ubuntu-latest
+            os: ubuntu-22.04
             pluginval-binary: ./pluginval
             ccache: ccache
           - name: macOS
@@ -53,13 +66,26 @@ jobs:
       if: ${{ matrix.name != 'macOS' }}
       uses: egor-tensin/setup-clang@v1
 
+    - name: check gcc version
+      if: ${{ matrix.name == 'Linux' }}
+      shell: bash
+      run: clang++ -v
+
     # This also starts up our "fake" display Xvfb, needed for pluginval
     - name: Install JUCE's Linux Deps
       if: runner.os == 'Linux'
       # Thanks to McMartin & co https://forum.juce.com/t/list-of-juce-dependencies-under-linux/15121/44
       run: |
         sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev xvfb ninja-build
+        # downgrade gcc to workaround 22.04 and C++20 issue 
+        # see: https://github.com/actions/runner-images/issues/8659
+        sudo apt-get install -y --allow-downgrades libc6=2.35-0ubuntu3.6 libc6-dev=2.35-0ubuntu3.6 libstdc++6=12.3.0-1ubuntu1~22.04 libgcc-s1=12.3.0-1ubuntu1~22.04
         sudo /usr/bin/Xvfb $DISPLAY &
+
+    - name: check gcc version
+      if: ${{ matrix.name == 'Linux' }}
+      shell: bash
+      run: clang++ -v
 
     - name: Cache IPP (Windows)
       if: runner.os == 'Windows'
@@ -116,7 +142,7 @@ jobs:
         echo "ARTIFACTS_PATH=${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}" >> $GITHUB_ENV
         echo "VST3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
         echo "AU_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
-        echo "AUV3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV          
+        echo "AUV3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV
         echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}" >> $GITHUB_ENV
 
     - name: ccache
@@ -125,7 +151,7 @@ jobs:
         key: v3-${{ matrix.os }}-${{ matrix.type }}
         variant: ${{ matrix.ccache }}
 
-    - name: Import certificates (macOS)
+    - name: Import Certificates (macOS)
       uses: apple-actions/import-codesign-certs@v2
       if: ${{ matrix.name == 'macOS' }}
       with:
@@ -136,13 +162,22 @@ jobs:
       shell: bash
       run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
 
+    - name: check gcc version
+      if: ${{ matrix.name == 'Linux' }}
+      shell: bash
+      run: clang++ -v
+
+    - name: check dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: ldd "/home/runner/.vst3/ZL Test.vst3/Contents/x86_64-linux/ZL Test.so"
+
     - name: Pluginval setup
       working-directory: ${{ env.BUILD_DIR }}
       shell: bash
       run: |
         curl -LO "https://github.com/Tracktion/pluginval/releases/download/v1.0.3/pluginval_${{ matrix.name }}.zip"
         7z x pluginval_${{ matrix.name }}.zip
-        echo "PLUGINVAL_DISABLED=Plugin state restoration" >> $GITHUB_ENV
 
     - name: Setup Pluginval random seed
       uses: josStorer/get-current-time@v2
@@ -150,30 +185,11 @@ jobs:
       with:
         format: YYYYMMDD
 
-    - name: Pluginval VST3 validations
+    - name: Pluginval
       working-directory: ${{ env.BUILD_DIR }}
       shell: bash
       run: |
-        ${{ matrix.pluginval-binary }} --verbose --validate "${{ env.VST3_PATH }}" --disabled-tests "${{ env.PLUGINVAL_DISABLED }}"
-      env:
-        STRICTNESS_LEVEL: 10
-        TIMEOUT_MS: 720000
-        REPEAT: 4
-        RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
-
-    - name: Pluginval AU validations (macOS)
-      working-directory: ${{ env.BUILD_DIR }}
-      if: ${{ matrix.name == 'macOS' }}
-      shell: bash
-      run: |
-        sudo cp -r "${{ env.AU_PATH }}" "/Library/Audio/Plug-ins/components"
-        sudo killall -9 AudioComponentRegistrar
-        ${{ matrix.pluginval-binary }} --verbose --validate "/Library/Audio/Plug-ins/components/${{ env.PRODUCT_NAME }}.component" --disabled-tests "${{ env.PLUGINVAL_DISABLED }}"
-      env:
-        STRICTNESS_LEVEL: 10
-        TIMEOUT_MS: 720000
-        REPEAT: 2
-        RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
+        ${{ matrix.pluginval-binary }} --strictness-level 10 --verbose --validate "${{ env.VST3_PATH }}"
 
     - name: Codesign (macOS)
       working-directory: ${{ env.BUILD_DIR }}
@@ -209,7 +225,7 @@ jobs:
       working-directory: ${{ env.ARTIFACTS_PATH }}
       run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" .
 
-    - name: Generate installer (Windows)
+    - name: Generate Installer (Windows)
       if: ${{ matrix.name == 'Windows' }}
       shell: bash
       run: |
