@@ -159,6 +159,11 @@ jobs:
       shell: bash
       run: ldd "/home/runner/.vst3/ZL Test.vst3/Contents/x86_64-linux/ZL Test.so"
 
+    - name: check dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: strings /usr/lib/libstdc++.so.6 | grep LIBCXX
+
     - name: Pluginval setup
       working-directory: ${{ env.BUILD_DIR }}
       shell: bash
