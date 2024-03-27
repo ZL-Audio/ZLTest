@@ -33,7 +33,12 @@ set(LV2URI "https://github.com/ZL-Audio/${PROJECT_NAME}")
 
 # Change me! Set the plugin formats you want built
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
-set(FORMATS AU VST3 LV2)
+message(STATUS ">>> ${CMAKE_SYSTEM_NAME}")
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(FORMATS VST3 LV2)
+else ()
+    set(FORMATS AU VST3)
+endif ()
 
 # For simplicity, the name of the CMake project is also the name of the target
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
