@@ -220,7 +220,7 @@ jobs:
     - name: Zip
       if: ${{ matrix.name == 'Linux' }}
       working-directory: ${{ env.ARTIFACTS_PATH }}
-      run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" .
+      run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "-x!*.a.
 
     - name: Generate Installer (Windows)
       if: ${{ matrix.name == 'Windows' }}
