@@ -1,7 +1,7 @@
 #include "PluginEditor.h"
 
 PluginEditor::PluginEditor(PluginProcessor &p)
-        : AudioProcessorEditor(&p), processorRef(p), mainPanel(p) {
+        : AudioProcessorEditor(&p), processorRef(p), mainPanel(p){
     juce::ignoreUnused(processorRef);
 
     // set font
@@ -11,10 +11,10 @@ PluginEditor::PluginEditor(PluginProcessor &p)
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(300, 200);
+    setSize(200, 200);
     addAndMakeVisible(mainPanel);
 
-    getConstrainer()->setFixedAspectRatio(1.5f);
+    getConstrainer()->setFixedAspectRatio(1.f);
     setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
 }
 

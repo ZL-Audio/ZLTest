@@ -6,25 +6,32 @@
 
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p)
-        : uiBase(),
+        : preocesorRef(p), uiBase(),
           leftPanel1(p, uiBase, true), leftPanel2(p, uiBase, false),
           rightPanel1(p, uiBase, true), rightPanel2(p, uiBase, false),
-          lPanel1(uiBase, true), lPanel2(uiBase, false) {
+          lPanel1(uiBase, true), lPanel2(uiBase, false),
+    name_look_and_feel_(uiBase) {
         juce::ignoreUnused(p);
-        addAndMakeVisible(leftPanel1);
-        addAndMakeVisible(leftPanel2);
-        addAndMakeVisible(rightPanel1);
-        addAndMakeVisible(rightPanel2);
-        addAndMakeVisible(lPanel1);
-        addAndMakeVisible(lPanel2);
+       label.setLookAndFeel(&name_look_and_feel_);
+        // addAndMakeVisible(leftPanel1);
+        // addAndMakeVisible(leftPanel2);
+        // addAndMakeVisible(rightPanel1);
+        // addAndMakeVisible(rightPanel2);
+        // addAndMakeVisible(lPanel1);
+        // addAndMakeVisible(lPanel2);
+        name_look_and_feel_.setFontScale(3.f);
+        addAndMakeVisible(label);
+        startTimer(10);
     }
 
     MainPanel::~MainPanel() {
+        label.setLookAndFeel(nullptr);
+        stopTimer();
     }
 
     void MainPanel::paint(juce::Graphics &g) {
         juce::ignoreUnused(g);
-        g.fillAll(juce::Colours::white);
+        g.fillAll(uiBase.getBackgroundColor());
         // auto bounds = getLocalBounds().toFloat();
         // bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 1.f, {});
         // bounds = uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.15f, {.flip = true});
@@ -41,24 +48,30 @@ namespace zlPanel {
         // auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
         auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 2.5f;
         uiBase.setFontSize(fontSize);
+        label.setBounds(getLocalBounds());
 
-        juce::Grid grid;
-        using Track = juce::Grid::TrackInfo;
-        using Fr = juce::Grid::Fr;
-
-        grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
-        grid.templateColumns = {
-            Track(Fr(30)), Track(Fr(30)), Track(Fr(30)),
-        };
-
-        grid.items.add(leftPanel1);
-        grid.items.add(lPanel1);
-        grid.items.add(rightPanel1);
-        grid.items.add(leftPanel2);
-        grid.items.add(lPanel2);
-        grid.items.add(rightPanel2);
-
-
-        grid.performLayout(bound.toNearestInt());
+        // juce::Grid grid;
+        // using Track = juce::Grid::TrackInfo;
+        // using Fr = juce::Grid::Fr;
+        //
+        // grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
+        // grid.templateColumns = {
+        //     Track(Fr(30)), Track(Fr(30)), Track(Fr(30)),
+        // };
+        //
+        // grid.items.add(leftPanel1);
+        // grid.items.add(lPanel1);
+        // grid.items.add(rightPanel1);
+        // grid.items.add(leftPanel2);
+        // grid.items.add(lPanel2);
+        // grid.items.add(rightPanel2);
+        //
+        //
+        // grid.performLayout(bound.toNearestInt());
     }
+
+    void MainPanel::timerCallback() {
+        label.setText(juce::String(preocesorRef.blockSize.load()), juce::sendNotification);
+    }
+
 }

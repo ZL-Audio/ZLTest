@@ -14,7 +14,7 @@
 
 namespace zlPanel {
 
-        class MainPanel : public juce::Component {
+        class MainPanel : public juce::Component, private juce::Timer {
         public:
             explicit MainPanel(PluginProcessor &p);
 
@@ -25,6 +25,8 @@ namespace zlPanel {
             void resized() override;
 
         private:
+            PluginProcessor &preocesorRef;
+
             zlInterface::UIBase uiBase;
 
             LeftPanel leftPanel1, leftPanel2;
@@ -47,6 +49,11 @@ namespace zlPanel {
             //
             // std::unique_ptr<zlInterface::Dragger> dragger;
             // juce::OwnedArray<zlInterface::DraggerParameterAttach> draggerAttachments;
+
+            juce::Label label;
+            zlInterface::NameLookAndFeel name_look_and_feel_;
+
+            void timerCallback() override;
 
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainPanel)
         };

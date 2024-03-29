@@ -11,6 +11,7 @@
 class PluginProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener {
 public:
     juce::AudioProcessorValueTreeState parameters;
+    std::atomic<int> blockSize{0};
     PluginProcessor();
 
     ~PluginProcessor() override;
