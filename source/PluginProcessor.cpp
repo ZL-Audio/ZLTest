@@ -31,6 +31,12 @@ PluginProcessor::PluginProcessor()
 }
 
 void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {
+    const auto id1 = juce::Identifier(parameterID);
+    const auto id_gain1 = juce::Identifier("gain1");
+    if (id1 == id_gain1) {
+        gain1.setGainDecibels(newValue);
+    }
+    
     if (parameterID == "gain1") {
         juce::ScopedLock lock(gainLock);
         gain1.setGainDecibels(newValue);
