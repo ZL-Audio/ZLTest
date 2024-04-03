@@ -12,8 +12,9 @@ OutputBaseFilename={#ProductName}-{#Version}
 AppCopyright=Copyright (C) {#Year} {#Publisher}
 AppPublisher={#Publisher}
 AppVersion={#Version}
-; DefaultDirName="{commoncf64}\VST3\{#ProductName}.vst3"
+DefaultDirName="{commoncf64}\VST3\{#ProductName}.vst3"
 DisableDirPage=yes
+CreateAppDir=no
 
 ; MAKE SURE YOU READ THE FOLLOWING!
 ; LicenseFile="EULA.rtf"
