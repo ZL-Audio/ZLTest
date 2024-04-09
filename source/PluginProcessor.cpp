@@ -1,48 +1,33 @@
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
 
 //==============================================================================
 PluginProcessor::PluginProcessor()
-        : AudioProcessor(BusesProperties()
+    : AudioProcessor(BusesProperties()
 #if !JucePlugin_IsMidiEffect
 #if !JucePlugin_IsSynth
-                                 .withInput("Input", juce::AudioChannelSet::stereo(), true)
+          .withInput("Input", juce::AudioChannelSet::stereo(), true)
 #endif
-                                 .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+          .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-),
-          parameters(*this, nullptr, juce::Identifier("ZLTestParas"),
-                     {
-                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("gain1", 1),
-                                                                         "Gain 1",
-                                                                         juce::NormalisableRange<float>(-5, 5, .1f),
-                                                                         0.f),
-                             std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("gain2", 1),
-                                                                         "Gain 2",
-                                                                         juce::NormalisableRange<float>(-5, 5, .1f),
-                                                                         0.f),
-                     }){
-    parameters.addParameterListener("gain1", this);
-    parameters.addParameterListener("gain2", this);
-    // parameters.addParameterListener("high_split", this);
-    juce::ScopedLock lock(gainLock);
-    gain1.setGainDecibels(0);
-    gain2.setGainDecibels(0);
+      ),
+      parameters(*this, nullptr, juce::Identifier("ZLTestParas"),
+                 zlDSP::getParameterLayout()) {
+    filter.setOrder(2);
+    parameters.addParameterListener(zlDSP::fType::ID, this);
+    parameters.addParameterListener(zlDSP::freq::ID, this);
+    parameters.addParameterListener(zlDSP::gain::ID, this);
+    parameters.addParameterListener(zlDSP::Q::ID, this);
 }
 
 void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {
-    const auto id1 = juce::Identifier(parameterID);
-    const auto id_gain1 = juce::Identifier("gain1");
-    if (id1 == id_gain1) {
-        gain1.setGainDecibels(newValue);
-    }
-    
-    if (parameterID == "gain1") {
-        juce::ScopedLock lock(gainLock);
-        gain1.setGainDecibels(newValue);
-    } else {
-        juce::ScopedLock lock(gainLock);
-        gain2.setGainDecibels(newValue);
+    if (parameterID.startsWith(zlDSP::fType::ID)) {
+        filter.setFilterType(static_cast<zlIIR::FilterType>(newValue));
+    } else if (parameterID.startsWith(zlDSP::freq::ID)) {
+        filter.setFreq(static_cast<double>(newValue));
+    } else if (parameterID.startsWith(zlDSP::gain::ID)) {
+        filter.setGain(static_cast<double>(newValue));
+    } else if (parameterID.startsWith(zlDSP::Q::ID)) {
+        filter.setQ(static_cast<double>(newValue));
     }
 }
 
@@ -83,7 +68,7 @@ double PluginProcessor::getTailLengthSeconds() const {
 }
 
 int PluginProcessor::getNumPrograms() {
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
+    return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
     // so this should be at least 1, even if you're not really implementing programs.
 }
 
@@ -106,18 +91,19 @@ void PluginProcessor::changeProgramName(int index, const juce::String &newName) 
 
 //==============================================================================
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-    auto channels = static_cast<juce::uint32> (juce::jmin(getMainBusNumInputChannels(),
-                                                          getMainBusNumOutputChannels()));
-    juce::dsp::ProcessSpec spec{sampleRate, static_cast<juce::uint32> (samplesPerBlock),
-                                channels};
-    juce::ScopedLock lock(gainLock);
-    gain1.prepare(spec);
-    gain2.prepare(spec);
+    const auto channels = static_cast<juce::uint32>(juce::jmin(getMainBusNumInputChannels(),
+                                                         getMainBusNumOutputChannels()));
+    juce::dsp::ProcessSpec spec{
+        sampleRate,
+        static_cast<juce::uint32>(samplesPerBlock),
+        channels
+    };
+    doubleBuffer.setSize(2, samplesPerBlock);
+    filter.prepare(spec);
 }
 
 void PluginProcessor::releaseResources() {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+    filter.setOrder(2);
 }
 
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
@@ -143,11 +129,10 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
 void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                    juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
-    juce::dsp::AudioBlock<float> block(buffer);
-    juce::dsp::ProcessContextReplacing<float> context(block);
-    juce::ScopedLock lock(gainLock);
-    gain1.process(context);
-    gain2.process(context);
+    juce::ScopedNoDenormals noDenormals;
+    doubleBuffer.makeCopyOf(buffer, true);
+    filter.process(doubleBuffer);
+    buffer.makeCopyOf(doubleBuffer, true);
 }
 
 //==============================================================================
@@ -156,8 +141,7 @@ bool PluginProcessor::hasEditor() const {
 }
 
 juce::AudioProcessorEditor *PluginProcessor::createEditor() {
-    return new PluginEditor(*this);
-    // return new juce::GenericAudioProcessorEditor(*this);
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -165,13 +149,20 @@ void PluginProcessor::getStateInformation(juce::MemoryBlock &destData) {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
-    juce::ignoreUnused(destData);
+    auto tempTree = juce::ValueTree("ZLTestParaState");
+    tempTree.appendChild(parameters.copyState(), nullptr);
+    const std::unique_ptr<juce::XmlElement> xml(tempTree.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-    juce::ignoreUnused(data, sizeInBytes);
+    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+    if (xmlState != nullptr && xmlState->hasTagName("ZLEqualizerParaState")) {
+        auto tempTree = juce::ValueTree::fromXml(*xmlState);
+        parameters.replaceState(tempTree.getChildWithName(parameters.state.getType()));
+    }
 }
 
 //==============================================================================

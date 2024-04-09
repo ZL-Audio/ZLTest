@@ -1,8 +1,8 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "crossover/fir_crossover.h"
-#include "crossover/lr_crossover.h"
+#include "dsp_definitions.hpp"
+#include "iir_filter/iir_filter.hpp"
 
 #if (MSVC)
 #include "ipps.h"
@@ -55,7 +55,7 @@ public:
 
 private:
 
-    juce::dsp::Gain<float> gain1, gain2;
-    juce::CriticalSection gainLock;
+    zlIIR::Filter<double> filter;
+    juce::AudioBuffer<double> doubleBuffer;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
