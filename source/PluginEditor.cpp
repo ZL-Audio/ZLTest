@@ -18,8 +18,7 @@ PluginEditor::PluginEditor(PluginProcessor &p)
     setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
 }
 
-PluginEditor::~PluginEditor() {
-}
+PluginEditor::~PluginEditor() = default;
 
 void PluginEditor::paint(juce::Graphics &g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)

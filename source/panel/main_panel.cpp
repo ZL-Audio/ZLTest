@@ -6,34 +6,19 @@
 
 namespace zlPanel {
     MainPanel::MainPanel(PluginProcessor &p)
-        : uiBase(),
-          leftPanel1(p, uiBase, true), leftPanel2(p, uiBase, false),
-          rightPanel1(p, uiBase, true), rightPanel2(p, uiBase, false),
-          lPanel1(uiBase, true), lPanel2(uiBase, false) {
+        : uiBase(), selector(uiBase, *this) {
         juce::ignoreUnused(p);
-        addAndMakeVisible(leftPanel1);
-        addAndMakeVisible(leftPanel2);
-        addAndMakeVisible(rightPanel1);
-        addAndMakeVisible(rightPanel2);
-        addAndMakeVisible(lPanel1);
-        addAndMakeVisible(lPanel2);
+        viewPort.setScrollBarsShown(true, false,
+                                    true, false);
+        viewPort.setViewedComponent(&child, false);
+        addAndMakeVisible(viewPort);
     }
 
-    MainPanel::~MainPanel() {
-    }
+    MainPanel::~MainPanel() = default;
 
     void MainPanel::paint(juce::Graphics &g) {
         juce::ignoreUnused(g);
         g.fillAll(juce::Colours::white);
-        // auto bounds = getLocalBounds().toFloat();
-        // bounds = uiBase.drawShadowEllipse(g, bounds, uiBase.getFontSize() * 1.f, {});
-        // bounds = uiBase.drawInnerShadowEllipse(g, bounds, uiBase.getFontSize() * 0.15f, {.flip = true});
-        // g.setFont(uiBase.getFontSize());
-        // g.setColour(juce::Colours::black);
-        // g.drawText("test", bounds, juce::Justification::centredTop);
-        // g.drawText("test", bounds.toNearestInt(), juce::Justification::centredBottom);
-        // g.setColour(juce::Colours::black.withAlpha(1.f));
-        // g.drawText("test", bounds.toNearestInt(), juce::Justification::centred);
     }
 
     void MainPanel::resized() {
@@ -41,24 +26,16 @@ namespace zlPanel {
         // auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 5;
         auto fontSize = bound.getHeight() * 0.0514f * 0.45f * 2.5f;
         uiBase.setFontSize(fontSize);
+        // grid.items.add(colourSelector);
+        // bound = bound.withSizeKeepingCentre(bound.getWidth() - 20 * fontSize,
+        //                                     bound.getHeight());
+        // bound.removeFromBottom(bound.getHeight() - 5 * fontSize);
 
-        juce::Grid grid;
-        using Track = juce::Grid::TrackInfo;
-        using Fr = juce::Grid::Fr;
+        viewPort.setBounds(bound.toNearestInt());
 
-        grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
-        grid.templateColumns = {
-            Track(Fr(30)), Track(Fr(30)), Track(Fr(30)),
-        };
+        bound.setHeight(bound.getHeight() * 2.f);
+        child.setBounds(bound.toNearestInt());
 
-        grid.items.add(leftPanel1);
-        grid.items.add(lPanel1);
-        grid.items.add(rightPanel1);
-        grid.items.add(leftPanel2);
-        grid.items.add(lPanel2);
-        grid.items.add(rightPanel2);
-
-
-        grid.performLayout(bound.toNearestInt());
+        // selector.setBounds(bound.toNearestInt());
     }
 }
