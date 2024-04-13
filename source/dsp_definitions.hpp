@@ -106,7 +106,7 @@ namespace zlDSP {
     public:
         auto static constexpr ID = "gain";
         auto static constexpr name = "Gain";
-        inline auto static const range = juce::NormalisableRange<float>(-30, 30, .01f);
+        inline auto static const range = juce::NormalisableRange<float>(-12, 12, .01f);
         auto static constexpr defaultV = 0.f;
     };
 
@@ -114,14 +114,22 @@ namespace zlDSP {
     public:
         auto static constexpr ID = "Q";
         auto static constexpr name = "Q";
-        inline auto static const range = juce::NormalisableRange<float>(.025f, 25, .001f, 0.19213519025943943f);
+        inline auto static const range = juce::NormalisableRange<float>(.1f, 5, .001f, 0.19213519025943943f);
         auto static constexpr defaultV = 0.707f;
+    };
+
+    class agc : public BoolParameters<agc> {
+    public:
+        auto static constexpr ID = "agc";
+        auto static constexpr name = "AGC";
+        auto static constexpr defaultV = false;
     };
 
     inline void addOneBandParas(juce::AudioProcessorValueTreeState::ParameterLayout &layout,
                                 const std::string &suffix = "") {
         layout.add(fType::get(suffix),
-                   freq::get(suffix), gain::get(suffix), Q::get(suffix));
+                   freq::get(suffix), gain::get(suffix), Q::get(suffix),
+                   agc::get(suffix));
     }
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;

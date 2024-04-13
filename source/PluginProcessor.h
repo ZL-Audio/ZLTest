@@ -11,6 +11,7 @@
 class PluginProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener {
 public:
     juce::AudioProcessorValueTreeState parameters;
+
     PluginProcessor();
 
     ~PluginProcessor() override;
@@ -22,6 +23,10 @@ public:
     bool isBusesLayoutSupported(const BusesLayout &layouts) const override;
 
     void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
+
+    void processBlock(juce::AudioBuffer<double> &, juce::MidiBuffer &) override;
+
+    bool supportsDoublePrecisionProcessing() const override { return true; }
 
     juce::AudioProcessorEditor *createEditor() override;
 
@@ -54,8 +59,8 @@ public:
     void parameterChanged(const juce::String &parameterID, float newValue) override;
 
 private:
-
     zlIIR::Filter<double> filter;
+    zlIIR::StaticGainCompensation<double> agc;
     juce::AudioBuffer<double> doubleBuffer;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
 };

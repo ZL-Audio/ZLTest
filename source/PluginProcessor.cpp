@@ -11,12 +11,14 @@ PluginProcessor::PluginProcessor()
 #endif
       ),
       parameters(*this, nullptr, juce::Identifier("ZLTestParas"),
-                 zlDSP::getParameterLayout()) {
+                 zlDSP::getParameterLayout()),
+      agc(filter) {
     filter.setOrder(2);
     parameters.addParameterListener(zlDSP::fType::ID, this);
     parameters.addParameterListener(zlDSP::freq::ID, this);
     parameters.addParameterListener(zlDSP::gain::ID, this);
     parameters.addParameterListener(zlDSP::Q::ID, this);
+    parameters.addParameterListener(zlDSP::agc::ID, this);
 }
 
 void PluginProcessor::parameterChanged(const juce::String &parameterID, float newValue) {
@@ -28,6 +30,8 @@ void PluginProcessor::parameterChanged(const juce::String &parameterID, float ne
         filter.setGain(static_cast<double>(newValue));
     } else if (parameterID.startsWith(zlDSP::Q::ID)) {
         filter.setQ(static_cast<double>(newValue));
+    } else if (parameterID.startsWith(zlDSP::agc::ID)) {
+        agc.enable(static_cast<bool>(newValue));
     }
 }
 
@@ -92,13 +96,14 @@ void PluginProcessor::changeProgramName(int index, const juce::String &newName) 
 //==============================================================================
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     const auto channels = static_cast<juce::uint32>(juce::jmin(getMainBusNumInputChannels(),
-                                                         getMainBusNumOutputChannels()));
+                                                               getMainBusNumOutputChannels()));
     juce::dsp::ProcessSpec spec{
         sampleRate,
         static_cast<juce::uint32>(samplesPerBlock),
         channels
     };
     doubleBuffer.setSize(2, samplesPerBlock);
+    agc.prepare(spec);
     filter.prepare(spec);
 }
 
@@ -131,8 +136,23 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     juce::ignoreUnused(midiMessages);
     juce::ScopedNoDenormals noDenormals;
     doubleBuffer.makeCopyOf(buffer, true);
+    if (filter.updateParas()) {
+        agc.update();
+    }
     filter.process(doubleBuffer);
+    agc.process(doubleBuffer);
     buffer.makeCopyOf(doubleBuffer, true);
+}
+
+void PluginProcessor::processBlock(juce::AudioBuffer<double> &buffer,
+                                   juce::MidiBuffer &midiMessages) {
+    juce::ignoreUnused(midiMessages);
+    juce::ScopedNoDenormals noDenormals;
+    if (filter.updateParas()) {
+        agc.update();
+    }
+    filter.process(buffer);
+    agc.process(buffer);
 }
 
 //==============================================================================
