@@ -33,7 +33,7 @@ namespace zlIIR {
                 const auto f1 = juce::jlimit(FloatType(10), FloatType(20000), f / scale);
                 const auto f2 = juce::jlimit(FloatType(10), FloatType(20000), f * scale);
                 const auto fqEffect = integrateFQ(f1, f2);
-                const auto res = k1 * (fqEffect + k2 * bw + k3) * g * (k4 / (std::pow(bw, k5) + k6) * g * (k7 * g + 1) + 1);
+                const auto res = k1 * std::pow(fqEffect + k2 * bw, k3) * g * (k4 / (std::pow(bw, k5) + k6) * g * (k7 * g + 1) + 1);
                 gain.setGainDecibels(-res);
             }
             case lowShelf:

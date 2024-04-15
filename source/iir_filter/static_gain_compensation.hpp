@@ -42,13 +42,13 @@ namespace zlIIR {
             return static_cast<FloatType>(std::log((w1 + 1) * (1 - w2) / (w2 + 1) / (1 - w1)));
         }
 
-        static constexpr FloatType k1 = FloatType(0.086099);
-        static constexpr FloatType k2 = FloatType(0.520865);
-        static constexpr FloatType k3 = FloatType(0.503937);
-        static constexpr FloatType k4 = FloatType(0.745441);
-        static constexpr FloatType k5 = FloatType(2.290041);
-        static constexpr FloatType k6 = FloatType(12.950328);
-        static constexpr FloatType k7 = FloatType(0.027999);
+        static constexpr FloatType k1 = FloatType(0.165602);
+        static constexpr FloatType k2 = FloatType(0.338973);
+        static constexpr FloatType k3 = FloatType(0.712232);
+        static constexpr FloatType k4 = FloatType(0.374335);
+        static constexpr FloatType k5 = FloatType(1.494580);
+        static constexpr FloatType k6 = FloatType(7.131157);
+        static constexpr FloatType k7 = FloatType(0.014366);
     };
 } // zlIIR
 
