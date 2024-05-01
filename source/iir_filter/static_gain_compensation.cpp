@@ -26,18 +26,23 @@ namespace zlIIR {
         switch (target.getFilterType()) {
             case peak: {
                 const auto f = target.getFreq();
-                const auto q = juce::jlimit(FloatType(0.1), FloatType(5), target.getQ());
                 const auto g = juce::jlimit(FloatType(-12), FloatType(12), target.getGain());
-                const auto bw = static_cast<FloatType>(std::asinh(0.5 / q) / std::log(2));
-                const auto scale = static_cast<FloatType>(std::pow(2, bw / 2));
-                const auto f1 = juce::jlimit(FloatType(10), FloatType(20000), f / scale);
-                const auto f2 = juce::jlimit(FloatType(10), FloatType(20000), f * scale);
-                const auto fqEffect = integrateFQ(f1, f2);
-                const auto res = k1 * std::pow(fqEffect + k2 * bw, k3) * g * (k4 / (std::pow(bw, k5) + k6) * g * (k7 * g + 1) + 1);
-                gain.setGainDecibels(-res);
+                const auto q = juce::jlimit(FloatType(0.1), FloatType(5), target.getQ());
+                gain.setGainDecibels(getPeakEstimation(f, g, q));
+                break;
             }
-            case lowShelf:
-            case highShelf:
+            case lowShelf: {
+                const auto f = target.getFreq();
+                const auto g = juce::jlimit(FloatType(-12), FloatType(12), target.getGain());
+                gain.setGainDecibels(getLowShelfEstimation(f, g));
+                break;
+            }
+            case highShelf: {
+                const auto f = target.getFreq();
+                const auto g = juce::jlimit(FloatType(-12), FloatType(12), target.getGain());
+                gain.setGainDecibels(getHighShelfEstimation(f, g));
+                break;
+            }
             case tiltShelf:
             case bandShelf:
             case lowPass:
