@@ -49,6 +49,14 @@ namespace zlIIR {
         static constexpr FloatType k5 = FloatType(1.494580);
         static constexpr FloatType k6 = FloatType(7.131157);
         static constexpr FloatType k7 = FloatType(0.014366);
+        static constexpr std::array<FloatType, 5> ps{
+            FloatType(0.0862726951481001),
+            FloatType(0.1046525019998186),
+            FloatType(0.1726722349549796),
+            FloatType(2.5927641184697752),
+            FloatType(0.0201803918564377),
+        };
+
         static constexpr std::array<FloatType, 5> ls{
             FloatType(0.0715434186421697),
             FloatType(-0.1464669007001578),
@@ -71,8 +79,9 @@ namespace zlIIR {
             const auto f1 = juce::jlimit(FloatType(10), FloatType(20000), f / scale);
             const auto f2 = juce::jlimit(FloatType(10), FloatType(20000), f * scale);
             const auto fqEffect = integrateFQ(f1, f2);
-            auto res = k1 * std::pow(fqEffect + k2 * bw, k3) * g * (
-                           k4 / (std::pow(bw, k5) + k6) * g * (k7 * g + 1) + 1);
+            // auto res = k1 * std::pow(fqEffect + k2 * bw, k3) * g * (
+            //                k4 / (std::pow(bw, k5) + k6) * g * (k7 * g + 1) + 1);
+            auto res = (ps[0] * fqEffect + ps[1] * std::sqrt(bw)) * g * (ps[2] / (bw + ps[3]) * g * (ps[4] * g + 1) + 1);
             if (g > 0) {
                 res = std::max(FloatType(0), res);
             } else {
