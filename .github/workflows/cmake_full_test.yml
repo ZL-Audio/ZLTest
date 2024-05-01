@@ -59,7 +59,7 @@ jobs:
         sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev xvfb ninja-build
         # downgrade gcc to workaround 22.04 and C++20 issue 
         # see: https://github.com/actions/runner-images/issues/8659
-        sudo apt-get install -y --allow-downgrades libc6=2.35-0ubuntu3.7 libc6-dev=2.35-0ubuntu3.7 libstdc++6=12.3.0-1ubuntu1~22.04 libgcc-s1=12.3.0-1ubuntu1~22.04
+        # sudo apt-get install -y --allow-downgrades libc6=2.35-0ubuntu3.7 libc6-dev=2.35-0ubuntu3.7 libstdc++6=12.3.0-1ubuntu1~22.04 libgcc-s1=12.3.0-1ubuntu1~22.04
         sudo /usr/bin/Xvfb $DISPLAY &
 
     - name: Cache IPP (Windows)
@@ -178,20 +178,6 @@ jobs:
         TIMEOUT_MS: 2880000
         REPEAT: 2
         RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
-
-    # - name: Pluginval AU validations (macOS)
-    #   working-directory: ${{ env.BUILD_DIR }}
-    #   if: ${{ matrix.name == 'macOS' }}
-    #   shell: bash
-    #   run: |
-    #     sudo cp -r "${{ env.AU_PATH }}" "/Library/Audio/Plug-ins/components"
-    #     sudo killall -9 AudioComponentRegistrar
-    #     ${{ matrix.pluginval-binary }} --verbose --validate "/Library/Audio/Plug-ins/components/${{ env.PRODUCT_NAME }}.component" --disabled-tests "${{ env.PLUGINVAL_DISABLED }}"
-    #   env:
-    #     STRICTNESS_LEVEL: 10
-    #     TIMEOUT_MS: 720000
-    #     REPEAT: 1
-    #     RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
 
     - name: Codesign (macOS)
       working-directory: ${{ env.BUILD_DIR }}
