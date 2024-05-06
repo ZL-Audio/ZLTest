@@ -49,7 +49,6 @@ def main():
         if plugin_format + "_PATH" in os.environ:
             plugin_path = build_dir + "/" + os.environ[plugin_format + "_PATH"]
             if os.path.exists(plugin_path):
-                print("\tcreate {} package".format(plugin_format))
                 identifier = "{}.{}.{}.pkg".format(bundle_id, project_name, extension)
                 pkg_path = "{}/{}.{}.pkg".format(temp_dir, product_name, extension)
                 command_list = [
@@ -79,7 +78,7 @@ def main():
 
     import xml.dom.minidom 
   
-    with open("distribution.xml") as OriginalXML: 
+    with open("packaging/distribution.xml") as OriginalXML: 
         temp = xml.dom.minidom.parseString(OriginalXML.read()) 
         New_XML = temp.toprettyxml() 
     
