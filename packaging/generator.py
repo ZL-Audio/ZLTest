@@ -6,6 +6,17 @@ import subprocess
 
 
 def main():
+    temp_dir = "./appletmp"
+    subprocess.run(["mkdir", temp_dir])
+
+    project_name = os.getenv("PROJECT_NAME", "Pamplejuce")
+    product_name = os.getenv("PRODUCT_NAME", "Pamplejuce Demo")
+    version = os.getenv("VERSION", "0.0.0")
+    bundle_id = os.getenv("BUNDLE_ID", "")
+    build_dir = os.getenv("BUILD_DIR", "")
+    cert = os.getenv("APPLE_INSTALL_CERT", "")
+    artifacts_name = os.getenv("ARTIFACTS_NAME", "")
+
     # root
     root = ET.Element("installer-gui-script", minSpecVersion="1")
     # title
@@ -29,18 +40,7 @@ def main():
                            enable_localSystem="true")
     # choices outline
     outline = ET.SubElement(root, "choices-outline")
-
-    temp_dir = "./appletmp"
-    subprocess.run(["mkdir", temp_dir])
-
-    project_name = os.getenv("PROJECT_NAME", "Pamplejuce")
-    product_name = os.getenv("PRODUCT_NAME", "Pamplejuce Demo")
-    version = os.getenv("VERSION", "0.0.0")
-    bundle_id = os.getenv("BUNDLE_ID", "")
-    build_dir = os.getenv("BUILD_DIR", "")
-    cert = os.getenv("APPLE_INSTALL_CERT", "")
-    artifacts_name = os.getenv("ARTIFACTS_NAME", "")
-
+    
     print("Create packages")
     for plugin_format, extension, install_path in zip(
         ["VST3", "AU", "LV2", "CLAP"],
