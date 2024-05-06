@@ -4,7 +4,6 @@ import xml
 import xml.etree.cElementTree as ET
 import subprocess
 
-
 def main():
     temp_dir = "./appletmp"
     subprocess.run(["mkdir", temp_dir])
@@ -74,16 +73,11 @@ def main():
     # write xml
     print("")
     print("Create distribution xml")
+    ET.indent(root, space="\t", level=0)
     tree = ET.ElementTree(root)
     tree.write("packaging/distribution.xml", encoding="utf-8", xml_declaration=True)
 
-    import xml.dom.minidom 
-  
-    with open("packaging/distribution.xml") as OriginalXML: 
-        temp = xml.dom.minidom.parseString(OriginalXML.read()) 
-        New_XML = temp.toprettyxml() 
-    
-    print(New_XML)
+    print(ET.tostring(root, encoding='utf8').decode())
 
     print("")
     print("Create final package")
@@ -97,7 +91,6 @@ def main():
     subprocess.run(["productbuild"] + command_list)
 
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())
