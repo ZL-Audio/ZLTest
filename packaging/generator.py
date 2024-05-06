@@ -93,8 +93,9 @@ def main():
     if os.path.exists("packaging/icon.icns"):
         print("")
         print("Attach icns")
+        subprocess.run(["mv", "packaging/icon.icns", "."])
         with open("tmpIcon.rsrc", "w") as outfile:
-            subprocess.run(["echo", "read 'icns' (-16455) \"packaging/icon.icns\";"], stdout=outfile)
+            subprocess.run(["echo", "read 'icns' (-16455) \"icon.icns\";"], stdout=outfile)
         print(subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}.pkg\"".format(artifacts_name)], shell=True))
         print(subprocess.run(["SetFile", "-a", "C", "\"{}.pkg\"".format(artifacts_name)]))
     print("")
