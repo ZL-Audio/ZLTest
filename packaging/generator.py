@@ -6,6 +6,30 @@ import subprocess
 
 
 def main():
+    # root
+    root = ET.Element("installer-gui-script", minSpecVersion="1")
+    # title
+    title = ET.SubElement(root, "title")
+    title.text = "{} {}".format(product_name, version)
+    # EULA
+    if os.path.isfile("packaging/EULA"):
+        eula = ET.SubElement(root, file="packaing/EULA")
+    # readme
+    if os.path.isfile("packaging/Readme.rtf"):
+        eula = ET.SubElement(root, file="packaging/Readme.rtf")
+    # options
+    options = ET.SubElement(root, "options",
+                            customize="always",
+                            rootVolumeOnly="true",
+                            hostArchitectures="x86_64,arm64")
+    # domain
+    domain = ET.SubElement(root, "domain",
+                           enable_anywhere="false",
+                           enable_currentUserHome="false",
+                           enable_localSystem="true")
+    # choices outline
+    outline = ET.SubElement(root, "choices-outline")
+
     temp_dir = "./appletmp"
     subprocess.run(["mkdir", temp_dir])
 
@@ -14,25 +38,64 @@ def main():
     version = os.getenv("VERSION", "0.0.0")
     bundle_id = os.getenv("BUNDLE_ID", "")
     build_dir = os.getenv("BUILD_DIR", "")
-    cert = os.getenv("APPLE_INSTALLER_DEV", "")
+    cert = os.getenv("APPLE_INSTALL_CERT", "")
+    artifacts_name = os.getenv("ARTIFACTS_NAME", "")
 
     print("Create packages")
     for plugin_format, extension, install_path in zip(
-        ["VST3", "AU", "LV2"],
-        ["vst3", "component", "lv2"],
-        ["VST3", "Components", "LV2"]):
+        ["VST3", "AU", "LV2", "CLAP"],
+        ["vst3", "component", "lv2", "clap"],
+        ["VST3", "Components", "LV2", "CLAP"]):
         if plugin_format + "_PATH" in os.environ:
             plugin_path = build_dir + "/" + os.environ[plugin_format + "_PATH"]
             if os.path.exists(plugin_path):
                 print("\tcreate {} package".format(plugin_format))
-                subprocess.run([
-                    "pkgbuild",
-                    "--sign", cert,
-                    "--identifier", "{}.{}.{}.pkg".format(bundle_id, project_name, extension),
+                identifier = "{}.{}.{}.pkg".format(bundle_id, project_name, extension)
+                pkg_path = "{}/{}.{}.pkg".format(temp_dir, product_name, extension)
+                command_list = [
+                    "--identifier", identifier,
                     "--version", version,
                     "--component", plugin_path,
                     "--install-location", "/Library/Audio/Plug-Ins/" + install_path,
-                    "{}/{}.{}.pkg".format(temp_dir, product_name, extension)])
+                    pkg_path]
+                if len(cert) > 0:
+                    command_list = ["--sign", cert] + command_list
+                subprocess.run(["pkgbuild"] + command_list)
+                ET.SubElement(root, "pkg-ref",
+                              id=identifier)
+                ET.SubElement(root, "choice",
+                              id=identifier, visible="true", start_selected="true",
+                              title="{} {}".format(product_name, plugin_format))
+                ref = ET.SubElement(root, "pkg-ref",
+                                    id=identifier, version=version, onConclusion="none")
+                ref.text = pkg_path
+                ET.SubElement(outline, "line", choice=identifier)
+
+    # write xml
+    print("")
+    print("Create distribution xml")
+    tree = ET.ElementTree(root)
+    tree.write("packaging/distribution.xml", encoding="utf-8", xml_declaration=True)
+
+    import xml.dom.minidom 
+  
+    with open("distribution.xml") as OriginalXML: 
+        temp = xml.dom.minidom.parseString(OriginalXML.read()) 
+        New_XML = temp.toprettyxml() 
+    
+    print(New_XML)
+
+    print("")
+    print("Create final package")
+    command_list = ["--distribution", "distribution.xml",
+                    "--package-path", temp_dir,
+                    "--resources", "packaging",
+                    artifacts_name + ".pkg"]
+    if len(cert) > 0:
+        command_list = ["--sign", cert] + command_list
+        
+    subprocess.run(["pkgbuild"] + command_list)
+    print("Package is ready at " + artifacts_name + ".pkg")
 
     return 0
 
