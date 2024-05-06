@@ -12,7 +12,7 @@ def main():
     product_name = os.getenv("PRODUCT_NAME", "Pamplejuce Demo")
     version = os.getenv("VERSION", "0.0.0")
     bundle_id = os.getenv("BUNDLE_ID", "")
-    artifacts_path = os.getenv("ARTIFACTS_PATH", "")
+    build_dir = os.getenv("BUILD_DIR", "")
     cert = os.getenv("APPLE_INSTALLER_DEV", "")
 
     print(product_name + " " + version)
@@ -22,7 +22,7 @@ def main():
         ["vst3", "component", "lv2"],
         ["VST3", "Components", "LV2"]):
         if plugin_format + "_PATH" in os.environ:
-            plugin_path = artifacts_path + os.environ[plugin_format + "_PATH"]
+            plugin_path = build_dir + os.environ[plugin_format + "_PATH"]
             print(plugin_path)
             if os.path.exists(plugin_path):
                 print("Create {} package.".format(plugin_format))
@@ -30,7 +30,7 @@ def main():
                                "--sign", cert,
                                "--identifier", "{}.{}.pkg".format(bundle_id, extension),
                                "--version", version,
-                               "--component", artifacts_path + plugin_path,
+                               "--component", build_dir + plugin_path,
                                "--install-location", "/Library/Audio/Plug-Ins/" + install_path,
                                "{}/{}.{}.pkg".format(temp_dir, product_name, extension))
 
