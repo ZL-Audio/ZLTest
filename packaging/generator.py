@@ -12,7 +12,7 @@ def main():
     product_name = os.getenv("PRODUCT_NAME", "Pamplejuce Demo")
     version = os.getenv("VERSION", "0.0.0")
     bundle_id = os.getenv("BUNDLE_ID", "")
-    artifacts_path = os.getenv(ARTIFACTS_PATH, "")
+    artifacts_path = os.getenv("ARTIFACTS_PATH", "")
     cert = os.getenv("APPLE_INSTALLER_DEV", "")
 
     print(product_name + " " + version)
