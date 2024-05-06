@@ -24,10 +24,10 @@ def main():
     title.text = "{} {}".format(product_name, version)
     # EULA
     if os.path.isfile("packaging/EULA"):
-        eula = ET.SubElement(root, file="packaing/EULA")
+        eula = ET.SubElement(root, "license", file="packaing/EULA")
     # readme
     if os.path.isfile("packaging/Readme.rtf"):
-        eula = ET.SubElement(root, file="packaging/Readme.rtf")
+        eula = ET.SubElement(root, "readme", file="packaging/Readme.rtf")
     # options
     options = ET.SubElement(root, "options",
                             customize="always",
