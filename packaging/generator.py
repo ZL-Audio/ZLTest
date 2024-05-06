@@ -97,7 +97,9 @@ def main():
             subprocess.run(["echo", "read 'icns' (-16455) \"packaging/icon.icns\";"], stdout=outfile)
         subprocess.run(["Rez", "-append", "tmpIcon.rsrc", "-o", "'{}.pkg'".format(artifacts_name)])
         subprocess.run(["SetFile", "-a", "C", "'{}.pkg'".format(artifacts_name)])
-
+    print("")
+    print("Zip package")
+    subprocess.run(["zip", "'{}.zip'".format(artifacts_name), "'{}.pkg'".format(artifacts_name)])
     return 0
 
 if __name__ == '__main__':

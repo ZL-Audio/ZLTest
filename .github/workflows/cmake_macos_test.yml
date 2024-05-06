@@ -155,9 +155,9 @@ jobs:
       env:
         PYTHONUNBUFFERED: "1"
 
-    - name: Upload DMG (MacOS)
+    - name: Upload Zip (MacOS)
       if: ${{ matrix.name == 'macOS' }}
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACTS_NAME }}.pkg
-        path: ${{ env.ARTIFACTS_NAME }}.pkg
+        name: ${{ env.ARTIFACTS_NAME }}.zip
+        path: ${{ env.ARTIFACTS_NAME }}.zip
