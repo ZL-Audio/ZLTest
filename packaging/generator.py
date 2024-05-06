@@ -12,8 +12,6 @@ def main():
     product_name = os.getenv("PRODUCT_NAME", "Pamplejuce Demo")
     version = os.getenv("VERSION", "0.0.0")
     bundle_id = os.getenv("BUNDLE_ID", "")
-    build_dir = os.getenv("BUILD_DIR", "")
-    cert = os.getenv("APPLE_INSTALL_CERT", "")
     artifacts_name = os.getenv("ARTIFACTS_NAME", "")
 
     # root
@@ -50,17 +48,7 @@ def main():
             plugin_path = build_dir + "/" + os.environ[plugin_format + "_PATH"]
             if os.path.exists(plugin_path):
                 identifier = "{}.{}.{}.pkg".format(bundle_id, project_name, extension)
-                pkg_path = "{}/{}.{}.pkg".format(temp_dir, product_name, extension)
-                command_list = [
-                    "--identifier", identifier,
-                    "--version", version,
-                    "--component", plugin_path,
-                    "--install-location", "/Library/Audio/Plug-Ins/" + install_path,
-                    pkg_path]
-                if len(cert) > 0:
-                    command_list = ["--sign", cert] + command_list
-                subprocess.run(["pkgbuild"] + command_list)
-                # ET.SubElement(root, "pkg-ref", id=identifier)
+                pkg_path = "{}/{}.{}.pkg".format(build_dir, product_name, extension)
                 ref = ET.SubElement(root, "pkg-ref",
                                     id=identifier, version=version, onConclusion="none")
                 ref.text = pkg_path
@@ -82,9 +70,9 @@ def main():
     print("")
     print("Create final package")
     command_list = ["--distribution", "packaging/distribution.xml",
-                    "--package-path", temp_dir,
+                    "--package-path", build_dir,
                     "--resources", "packaging",
-                    artifacts_name + ".pkg"]
+                    artifacts_name + "_unsigned.pkg"]
     if len(cert) > 0:
         command_list = ["--sign", cert] + command_list
         
@@ -97,13 +85,11 @@ def main():
         with open("tmpIcon.rsrc", "w") as outfile:
             subprocess.run(["echo", "read 'icns' (-16455) \"icon.icns\";"], stdout=outfile)
         subprocess.run(["ls", "-hl"])
-        print(subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}.pkg\"".format(artifacts_name)], shell=True))
+        print(subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}_unsigned.pkg\"".format(artifacts_name)], shell=True))
         subprocess.run(["ls", "-hl"])
-        print(subprocess.run(["SetFile -a C \"{}.pkg\"".format(artifacts_name)], shell=True))
+        print(subprocess.run(["SetFile -a C \"{}_unsigned.pkg\"".format(artifacts_name)], shell=True))
         subprocess.run(["ls", "-hl"])
     print("")
-    print("Compress package")
-    subprocess.run(["tar", "-czf", "{}.tgz".format(artifacts_name), "{}.pkg".format(artifacts_name)])
     return 0
 
 if __name__ == '__main__':

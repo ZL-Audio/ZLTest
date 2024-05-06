@@ -151,21 +151,33 @@ jobs:
 
     - name: Generate Packages (macOS)
       if: ${{ matrix.name == 'macOS' }}
-      run: python3 -u packaging/generator.py
+      run: |
+        pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.BUILD_DIR }}/${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components" "${{ env.BUILD_DIR }}/${{ env.PRODUCT_NAME }}.au.pkg"
+        pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.BUILD_DIR }}/${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "${{ env.BUILD_DIR }}/${{ env.PRODUCT_NAME }}.vst3.pkg"
+        python3 -u packaging/generator.py
+
+    - name: Sign Final Package (macOS)
+      if: ${{ (matrix.name == 'macOS') && (env.APPLE_INSTALLER_DEV != "") }}
+      run: productsign --sign "${{ secrets.APPLE_INSTALLER_DEV }}" "${{ env.ARTIFACTS_NAME }}_unsigned.pkg" "${{ env.ARTIFACTS_NAME }}.pkg"
       env:
-        PYTHONUNBUFFERED: "1"
+        APPLE_INSTALLER_DEV: ${{ secrets.APPLE_INSTALLER_DEV }}
+
+    - name: Notarize and Staple PKG (macOS)
+      if: ${{ (matrix.name == 'macOS') && (env.NOTARIZATION_USERNAME != "")}}
+      run: |
+        xcrun notarytool submit "${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
+        xcrun stapler staple "${{ env.ARTIFACT_NAME }}.pkg"
+      env:
+        NOTARIZATION_USERNAME: ${{ secrets.NOTARIZATION_USERNAME }}
+
+    - name: Compress Final Package (macOS)
+      if: ${{ matrix.name == 'macOS' }}
+      run: tar -czf "${{ env.ARTIFACTS_NAME }}.tgz" "${{ env.ARTIFACTS_NAME }}.pkg"
 
     - name: Check Files
       run: |
         cat tmpIcon.rsrc
         ls
-
-    - name: Upload PKG (MacOS)
-      if: ${{ matrix.name == 'macOS' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.ARTIFACTS_NAME }}.pkg
-        path: "${{ env.ARTIFACTS_NAME }}.pkg"
 
     - name: Upload Tar Archive (MacOS)
       if: ${{ matrix.name == 'macOS' }}
