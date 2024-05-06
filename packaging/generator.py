@@ -86,7 +86,7 @@ def main():
 
     print("")
     print("Create final package")
-    command_list = ["--distribution", "distribution.xml",
+    command_list = ["--distribution", "packaging/distribution.xml",
                     "--package-path", temp_dir,
                     "--resources", "packaging",
                     artifacts_name + ".pkg"]
