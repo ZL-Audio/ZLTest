@@ -162,6 +162,12 @@ jobs:
       env:
         APPLE_INSTALLER_DEV: ${{ secrets.APPLE_INSTALLER_DEV }}
 
+    - name: Rename Final Package (macOS)
+      if: ${{ (matrix.name == 'macOS') && (env.APPLE_INSTALLER_DEV == '') }}
+      run: mv "${{ env.ARTIFACTS_NAME }}_unsigned.pkg" "${{ env.ARTIFACTS_NAME }}.pkg"
+      env:
+        APPLE_INSTALLER_DEV: ${{ secrets.APPLE_INSTALLER_DEV }}
+
     - name: Notarize and Staple PKG (macOS)
       if: ${{ (matrix.name == 'macOS') && (env.NOTARIZATION_USERNAME != '')}}
       run: |

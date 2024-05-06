@@ -83,11 +83,8 @@ def main():
         subprocess.run(["mv", "packaging/icon.icns", "."])
         with open("tmpIcon.rsrc", "w") as outfile:
             subprocess.run(["echo", "read 'icns' (-16455) \"icon.icns\";"], stdout=outfile)
-        subprocess.run(["ls", "-hl"])
         print(subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}_unsigned.pkg\"".format(artifacts_name)], shell=True))
-        subprocess.run(["ls", "-hl"])
         print(subprocess.run(["SetFile -a C \"{}_unsigned.pkg\"".format(artifacts_name)], shell=True))
-        subprocess.run(["ls", "-hl"])
     print("")
     return 0
 
