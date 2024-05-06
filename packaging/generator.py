@@ -93,7 +93,7 @@ def main():
     if os.path.exists("packaging/icon.icns"):
         print("")
         print("Attach icns")
-        subprocess.run(["DeRez", "-only", "icns", "packaging/icon.icns" "-o", "tmpIcon.rsrc"])
+        subprocess.run(["DeRez", "-only", "icns", "packaging/icon.icns" ">", "tmpIcon.rsrc"])
         subprocess.run(["Rez", "-append", "tmpIcon.rsrc", "-o", artifacts_name + ".pkg"])
         subprocess.run(["SetFile", "-a", "C", artifacts_name + ".pkg"])
 
