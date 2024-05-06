@@ -90,6 +90,10 @@ def main():
         
     subprocess.run(["productbuild"] + command_list)
 
+    if os.path.isfile("packaging/icon.icns"):
+        subprocess.run(["Rez", "-append", "packaging/icon.icns", "-o", artifacts_name + ".pkg"])
+        subprocess.run(["SetFile", "-a", "C", artifacts_name + ".pkg"])
+
     return 0
 
 if __name__ == '__main__':
