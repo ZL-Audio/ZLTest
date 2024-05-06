@@ -14,12 +14,15 @@ def main():
     bundle_id = os.getenv("BUNDLE_ID", "")
     cert = os.getenv("APPLE_INSTALLER_DEV", "")
 
+    print(product_name + " " + version)
+
     for plugin_format, extension, install_path in zip(
         ["VST3", "AU", "LV2"],
         ["vst3", "component", "lv2"],
         ["VST3", "Components", "LV2"]):
         if plugin_format + "_PATH" in os.environ:
             plugin_path = os.environ[plugin_format + "_PATH"]
+            print(plugin_path)
             if os.path.exists(plugin_path):
                 print("Create {} package.".format(plugin_format))
                 subprocess.run("pkgbuild",

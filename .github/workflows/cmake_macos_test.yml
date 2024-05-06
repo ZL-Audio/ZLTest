@@ -154,6 +154,7 @@ jobs:
       run: python3 -u packaging/generator.py
       env:
         APPLE_INSTALLER_DEV: ${{ secrets.DEV_ID_APPLICATION}}
+        PYTHONUNBUFFERED: "1"
     # - name: Set python to 3.10
     #   uses: actions/setup-python@v5
     #   with:
