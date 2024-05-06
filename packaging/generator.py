@@ -13,7 +13,7 @@ def main():
     version = os.getenv("VERSION", "0.0.0")
     bundle_id = os.getenv("BUNDLE_ID", "")
     build_dir = os.getenv("BUILD_DIR", "")
-    artifacts_name = os.getenv("ARTIFACTS_NAME", "")
+    artifact_name = os.getenv("ARTIFACT_NAME", "")
 
     # root
     root = ET.Element("installer-gui-script", minSpecVersion="1")
@@ -73,7 +73,7 @@ def main():
     command_list = ["--distribution", "packaging/distribution.xml",
                     "--package-path", build_dir,
                     "--resources", "packaging",
-                    artifacts_name + "_unsigned.pkg"]
+                    artifact_name + "_unsigned.pkg"]
         
     subprocess.run(["productbuild"] + command_list)
 
@@ -83,8 +83,8 @@ def main():
         subprocess.run(["mv", "packaging/icon.icns", "."])
         with open("tmpIcon.rsrc", "w") as outfile:
             subprocess.run(["echo", "read 'icns' (-16455) \"icon.icns\";"], stdout=outfile)
-        print(subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}_unsigned.pkg\"".format(artifacts_name)], shell=True))
-        print(subprocess.run(["SetFile -a C \"{}_unsigned.pkg\"".format(artifacts_name)], shell=True))
+        print(subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}_unsigned.pkg\"".format(artifact_name)], shell=True))
+        print(subprocess.run(["SetFile -a C \"{}_unsigned.pkg\"".format(artifact_name)], shell=True))
     print("")
     return 0
 

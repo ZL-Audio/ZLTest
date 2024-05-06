@@ -128,7 +128,7 @@ jobs:
         echo "VST3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
         echo "AU_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
         echo "AUV3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV
-        echo "ARTIFACTS_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}" >> $GITHUB_ENV
+        echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}" >> $GITHUB_ENV
 
     - name: Import Certificates (macOS)
       uses: apple-actions/import-codesign-certs@v2
@@ -158,13 +158,13 @@ jobs:
 
     - name: Sign Final Package (macOS)
       if: ${{ (matrix.name == 'macOS') && (env.APPLE_INSTALLER_DEV != '') }}
-      run: productsign --sign "${{ secrets.APPLE_INSTALLER_DEV }}" "${{ env.ARTIFACTS_NAME }}_unsigned.pkg" "${{ env.ARTIFACTS_NAME }}.pkg"
+      run: productsign --sign "${{ secrets.APPLE_INSTALLER_DEV }}" "${{ env.ARTIFACT_NAME }}_unsigned.pkg" "${{ env.ARTIFACT_NAME }}.pkg"
       env:
         APPLE_INSTALLER_DEV: ${{ secrets.APPLE_INSTALLER_DEV }}
 
     - name: Rename Final Package (macOS)
       if: ${{ (matrix.name == 'macOS') && (env.APPLE_INSTALLER_DEV == '') }}
-      run: mv "${{ env.ARTIFACTS_NAME }}_unsigned.pkg" "${{ env.ARTIFACTS_NAME }}.pkg"
+      run: mv "${{ env.ARTIFACT_NAME }}_unsigned.pkg" "${{ env.ARTIFACT_NAME }}.pkg"
       env:
         APPLE_INSTALLER_DEV: ${{ secrets.APPLE_INSTALLER_DEV }}
 
@@ -178,16 +178,11 @@ jobs:
 
     - name: Compress Final Package (macOS)
       if: ${{ matrix.name == 'macOS' }}
-      run: tar -czf "${{ env.ARTIFACTS_NAME }}.tgz" "${{ env.ARTIFACTS_NAME }}.pkg"
-
-    - name: Check Files
-      run: |
-        cat tmpIcon.rsrc
-        ls
+      run: tar -czf "${{ env.ARTIFACT_NAME }}.tgz" "${{ env.ARTIFACT_NAME }}.pkg"
 
     - name: Upload Tar Archive (MacOS)
       if: ${{ matrix.name == 'macOS' }}
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACTS_NAME }}.tgz
-        path: "${{ env.ARTIFACTS_NAME }}.tgz"
+        name: ${{ env.ARTIFACT_NAME }}.tgz
+        path: "${{ env.ARTIFACT_NAME }}.tgz"
