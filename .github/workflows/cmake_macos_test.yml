@@ -167,9 +167,9 @@ jobs:
         name: ${{ env.ARTIFACTS_NAME }}.pkg
         path: "${{ env.ARTIFACTS_NAME }}.pkg"
 
-    - name: Upload Zip (MacOS)
+    - name: Upload Tar Archive (MacOS)
       if: ${{ matrix.name == 'macOS' }}
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACTS_NAME }}.zip
-        path: "${{ env.ARTIFACTS_NAME }}.zip"
+        name: ${{ env.ARTIFACTS_NAME }}.tgz
+        path: "${{ env.ARTIFACTS_NAME }}.tgz"

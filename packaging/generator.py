@@ -96,11 +96,14 @@ def main():
         subprocess.run(["mv", "packaging/icon.icns", "."])
         with open("tmpIcon.rsrc", "w") as outfile:
             subprocess.run(["echo", "read 'icns' (-16455) \"icon.icns\";"], stdout=outfile)
+        subprocess.run(["ls", "-hl"])
         print(subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}.pkg\"".format(artifacts_name)], shell=True))
-        print(subprocess.run(["SetFile", "-a", "C", "{}.pkg".format(artifacts_name)]))
+        subprocess.run(["ls", "-hl"])
+        print(subprocess.run(["SetFile -a C \"{}.pkg\"".format(artifacts_name)], shell=True))
+        subprocess.run(["ls", "-hl"])
     print("")
-    print("Zip package")
-    subprocess.run(["zip", "{}.zip".format(artifacts_name), "{}.pkg".format(artifacts_name)])
+    print("Compress package")
+    subprocess.run(["tar", "-czf", "{}.tgz".format(artifacts_name), "{}.pkg".format(artifacts_name)])
     return 0
 
 if __name__ == '__main__':
