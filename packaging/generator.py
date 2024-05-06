@@ -40,7 +40,7 @@ def main():
                            enable_localSystem="true")
     # choices outline
     outline = ET.SubElement(root, "choices-outline")
-    
+
     print("Create packages")
     for plugin_format, extension, install_path in zip(
         ["VST3", "AU", "LV2", "CLAP"],
@@ -60,14 +60,15 @@ def main():
                 if len(cert) > 0:
                     command_list = ["--sign", cert] + command_list
                 subprocess.run(["pkgbuild"] + command_list)
-                ET.SubElement(root, "pkg-ref",
-                              id=identifier)
-                ET.SubElement(root, "choice",
-                              id=identifier, visible="true", start_selected="true",
-                              title="{} {}".format(product_name, plugin_format))
+                # ET.SubElement(root, "pkg-ref",
+                #               id=identifier)
                 ref = ET.SubElement(root, "pkg-ref",
                                     id=identifier, version=version, onConclusion="none")
                 ref.text = pkg_path
+                choice = ET.SubElement(root, "choice",
+                              id=identifier, visible="true", start_selected="true",
+                              title="{} {}".format(product_name, plugin_format))
+                ET.SubElement(choice, "pkg-ref", id=identifier)
                 ET.SubElement(outline, "line", choice=identifier)
 
     # write xml
