@@ -24,10 +24,11 @@ def main():
     title.text = "{} {}".format(product_name, version)
     # EULA
     if os.path.isfile("packaging/EULA"):
-        eula = ET.SubElement(root, "license", file="packaing/EULA")
+        eula = ET.SubElement(root, "license", file="EULA")
+        eula.set("mime-type", "text/plain")
     # readme
     if os.path.isfile("packaging/Readme.rtf"):
-        eula = ET.SubElement(root, "readme", file="packaging/Readme.rtf")
+        readme = ET.SubElement(root, "readme", file="Readme.rtf")
     # options
     options = ET.SubElement(root, "options",
                             customize="always",
@@ -60,14 +61,13 @@ def main():
                 if len(cert) > 0:
                     command_list = ["--sign", cert] + command_list
                 subprocess.run(["pkgbuild"] + command_list)
-                # ET.SubElement(root, "pkg-ref",
-                #               id=identifier)
+                # ET.SubElement(root, "pkg-ref", id=identifier)
                 ref = ET.SubElement(root, "pkg-ref",
                                     id=identifier, version=version, onConclusion="none")
                 ref.text = pkg_path
-                choice = ET.SubElement(root, "choice",
-                              id=identifier, visible="true", start_selected="true",
-                              title="{} {}".format(product_name, plugin_format))
+                choice = ET.SubElement(root, "choice", id=identifier,
+                                       visible="true", start_selected="true",
+                                       title="{} {}".format(product_name, plugin_format))
                 ET.SubElement(choice, "pkg-ref", id=identifier)
                 ET.SubElement(outline, "line", choice=identifier)
 
