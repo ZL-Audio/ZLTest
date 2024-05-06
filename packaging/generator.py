@@ -12,6 +12,7 @@ def main():
     product_name = os.getenv("PRODUCT_NAME", "Pamplejuce Demo")
     version = os.getenv("VERSION", "0.0.0")
     bundle_id = os.getenv("BUNDLE_ID", "")
+    build_dir = os.getenv("BUILD_DIR", "")
     artifacts_name = os.getenv("ARTIFACTS_NAME", "")
 
     # root
