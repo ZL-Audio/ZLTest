@@ -156,7 +156,9 @@ jobs:
         PYTHONUNBUFFERED: "1"
 
     - name: Check Files
-      run: ls
+      run: |
+        cat tmpIcon.rsrc
+        ls
 
     - name: Upload PKG (MacOS)
       if: ${{ matrix.name == 'macOS' }}

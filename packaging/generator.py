@@ -95,7 +95,7 @@ def main():
         print("Attach icns")
         with open("tmpIcon.rsrc", "w") as outfile:
             subprocess.run(["echo", "read 'icns' (-16455) \"packaging/icon.icns\";"], stdout=outfile)
-        subprocess.run(["Rez", "-append", "tmpIcon.rsrc", "-o", "{}.pkg".format(artifacts_name)])
+        subprocess.run(["Rez -append tmpIcon.rsrc -o \"{}\".pkg".format(artifacts_name)], shell=True)
         subprocess.run(["SetFile", "-a", "C", "{}.pkg".format(artifacts_name)])
     print("")
     print("Zip package")
