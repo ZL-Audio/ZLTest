@@ -43,7 +43,7 @@ def main():
     print("Create packages")
     for plugin_format, extension, install_path in zip(
         ["VST3", "AU", "LV2", "CLAP"],
-        ["vst3", "component", "lv2", "clap"],
+        ["vst3", "au", "lv2", "clap"],
         ["VST3", "Components", "LV2", "CLAP"]):
         if plugin_format + "_PATH" in os.environ:
             plugin_path = build_dir + "/" + os.environ[plugin_format + "_PATH"]
