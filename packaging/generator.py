@@ -94,7 +94,6 @@ def main():
         command_list = ["--sign", cert] + command_list
         
     subprocess.run(["productbuild"] + command_list)
-    print("Package is ready at " + artifacts_name + ".pkg")
 
     return 0
 

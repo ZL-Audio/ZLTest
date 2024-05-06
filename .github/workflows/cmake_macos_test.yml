@@ -128,7 +128,7 @@ jobs:
         echo "VST3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
         echo "AU_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
         echo "AUV3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV
-        echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}" >> $GITHUB_ENV
+        echo "ARTIFACTS_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}" >> $GITHUB_ENV
 
     - name: Import Certificates (macOS)
       uses: apple-actions/import-codesign-certs@v2
@@ -159,5 +159,5 @@ jobs:
       if: ${{ matrix.name == 'macOS' }}
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACT_NAME }}.pkg
-        path: ${{ env.ARTIFACT_NAME }}.pkg
+        name: ${{ env.ARTIFACTS_NAME }}.pkg
+        path: ${{ env.ARTIFACTS_NAME }}.pkg
