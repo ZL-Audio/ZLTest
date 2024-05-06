@@ -74,8 +74,6 @@ def main():
                     "--package-path", build_dir,
                     "--resources", "packaging",
                     artifacts_name + "_unsigned.pkg"]
-    if len(cert) > 0:
-        command_list = ["--sign", cert] + command_list
         
     subprocess.run(["productbuild"] + command_list)
 
