@@ -155,6 +155,9 @@ jobs:
       env:
         PYTHONUNBUFFERED: "1"
 
+    - name: Check Files
+      run: ls
+
     - name: Upload PKG (MacOS)
       if: ${{ matrix.name == 'macOS' }}
       uses: actions/upload-artifact@v4
