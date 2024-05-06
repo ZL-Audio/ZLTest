@@ -157,13 +157,13 @@ jobs:
         python3 -u packaging/generator.py
 
     - name: Sign Final Package (macOS)
-      if: ${{ (matrix.name == 'macOS') && (env.APPLE_INSTALLER_DEV != "") }}
+      if: ${{ (matrix.name == 'macOS') && (env.APPLE_INSTALLER_DEV != '') }}
       run: productsign --sign "${{ secrets.APPLE_INSTALLER_DEV }}" "${{ env.ARTIFACTS_NAME }}_unsigned.pkg" "${{ env.ARTIFACTS_NAME }}.pkg"
       env:
         APPLE_INSTALLER_DEV: ${{ secrets.APPLE_INSTALLER_DEV }}
 
     - name: Notarize and Staple PKG (macOS)
-      if: ${{ (matrix.name == 'macOS') && (env.NOTARIZATION_USERNAME != "")}}
+      if: ${{ (matrix.name == 'macOS') && (env.NOTARIZATION_USERNAME != '')}}
       run: |
         xcrun notarytool submit "${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
         xcrun stapler staple "${{ env.ARTIFACT_NAME }}.pkg"
