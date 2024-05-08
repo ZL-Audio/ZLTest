@@ -15,10 +15,12 @@ AppVersion={#Version}
 DefaultDirName="{commoncf64}\VST3\{#ProductName}.vst3"
 DisableDirPage=yes
 CreateAppDir=no
+SetupIconFile=packaging\icon.ico
+UninstallDisplayIcon={uninstallexe}
 
 ; MAKE SURE YOU READ THE FOLLOWING!
-; LicenseFile="EULA.rtf"
-InfoBeforeFile="EULA.rtf"
+; LicenseFile="EULA"
+InfoBeforeFile="Readme.rtf"
 UninstallFilesDir="{commonappdata}\{#ProductName}\uninstall"
 
 [Types]

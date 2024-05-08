@@ -4,8 +4,6 @@ permissions:
   contents: write
 
 on:
-  push:
-    branches: [macos-pkg]
   workflow_dispatch:
 
 # When pushing new commits, cancel any running builds on that branch
