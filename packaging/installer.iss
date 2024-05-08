@@ -8,7 +8,7 @@
 ArchitecturesInstallIn64BitMode=x64
 ArchitecturesAllowed=x64
 AppName={#ProductName}
-OutputBaseFilename={#ProductName}-{#Version}
+OutputBaseFilename={#ProductName}-{#Version}-Windows
 AppCopyright=Copyright (C) {#Year} {#Publisher}
 AppPublisher={#Publisher}
 AppVersion={#Version}
@@ -24,17 +24,18 @@ InfoBeforeFile="Readme.rtf"
 UninstallFilesDir="{commonappdata}\{#ProductName}\uninstall"
 
 [Types]
-Name: "vst3";     Description: "VST3 only";
-Name: "lv2";      Description: "LV2 only";
-Name: "full";     Description: "Full installation";
+Name: "full"; Description: "Full installation"
+Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: "vst3";     Description: "VST3 only";         Types: vst3
-Name: "lv2";      Description: "LV2 only";          Types: lv2
-Name: "full";     Description: "Full installation"; Types: lv2 vst3
+Name: "vst3"; Description: {#ProductName} VST3; Types: full custom; Flags: checkablealone
+Name: "lv2"; Description: {#ProductName} LV2; Types: full custom; Flags: checkablealone
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{commoncf64}\VST3\{#ProductName}Data"
+
+[Tasks]
+Name: "vst3";     Description: "VST3 only";         Components: vst3
 
 ; MSVC adds a .ilk when building the plugin. Let's not include that.
 [Files]
