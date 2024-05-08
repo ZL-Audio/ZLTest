@@ -15,7 +15,7 @@ AppVersion={#Version}
 DefaultDirName="{commoncf64}\VST3\{#ProductName}.vst3"
 DisableDirPage=yes
 CreateAppDir=no
-SetupIconFile=compiler:icon.ico
+SetupIconFile=..\packaging\icon.ico
 UninstallDisplayIcon={uninstallexe}
 
 ; MAKE SURE YOU READ THE FOLLOWING!
