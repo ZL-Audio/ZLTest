@@ -46,7 +46,7 @@ def main():
         ["vst3", "au", "lv2", "clap"],
         ["VST3", "Components", "LV2", "CLAP"]):
         if plugin_format + "_PATH" in os.environ:
-            plugin_path = build_dir + "/" + os.environ[plugin_format + "_PATH"]
+            plugin_path = os.environ[plugin_format + "_PATH"]
             if os.path.exists(plugin_path):
                 identifier = "{}.{}.{}.pkg".format(bundle_id, project_name, extension)
                 pkg_path = "{}/{}.{}.pkg".format(build_dir, product_name, extension)
