@@ -33,9 +33,7 @@ Name: "lv2"; Description: {#ProductName} LV2; Types: full custom; Flags: checkab
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{commoncf64}\VST3\{#ProductName}Data"
-
-[Tasks]
-Name: "vst3";     Description: "VST3 only";         Components: vst3
+Type: filesandordirs; Name: "{commoncf64}\LV2\{#ProductName}Data"
 
 ; MSVC adds a .ilk when building the plugin. Let's not include that.
 [Files]
