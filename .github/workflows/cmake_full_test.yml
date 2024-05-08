@@ -164,7 +164,6 @@ jobs:
           format: YYYYMMDD
 
       - name: Pluginval VST3 validations
-        working-directory: ${{ env.BUILD_DIR }}
         shell: bash
         run: |
           ${{ matrix.pluginval-binary }} --verbose --validate "${{ env.VST3_PATH }}" --disabled-tests "${{ env.PLUGINVAL_DISABLED }}"
@@ -175,7 +174,6 @@ jobs:
           RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
 
       - name: Pluginval AU validations (macOS)
-        working-directory: ${{ env.BUILD_DIR }}
         if: ${{ matrix.name == 'macOS' }}
         shell: bash
         run: |
@@ -253,7 +251,6 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}.zip
           path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.zip"
-
 
       - name: Upload Tar Archive (MacOS)
         if: ${{ matrix.name == 'macOS' }}
