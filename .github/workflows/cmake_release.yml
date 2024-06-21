@@ -111,7 +111,7 @@ jobs:
         boost_version: 1.80.0
 
     - name: Cache the build
-      uses: mozilla-actions/sccache-action@v0.0.4
+      uses: mozilla-actions/sccache-action@v0.0.5
 
     - name: Configure
       shell: bash
