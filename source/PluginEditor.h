@@ -4,7 +4,8 @@
 #include "BinaryData.h"
 
 //==============================================================================
-class PluginEditor : public juce::AudioProcessorEditor {
+class PluginEditor : public juce::AudioProcessorEditor,
+juce::Timer {
 public:
     explicit PluginEditor(PluginProcessor &);
 
@@ -15,10 +16,14 @@ public:
 
     void resized() override;
 
+    void mouseDown(const juce::MouseEvent &event) override;
+
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
     PluginProcessor &processorRef;
-    juce::TextButton inspectButton{"Inspect the UI"};
+
+    int colourFlag = 0;
+
+    void timerCallback() override;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

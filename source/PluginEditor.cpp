@@ -4,31 +4,40 @@ PluginEditor::PluginEditor(PluginProcessor &p)
         : AudioProcessorEditor(&p), processorRef(p) {
     juce::ignoreUnused(processorRef);
 
-    addAndMakeVisible(inspectButton);
-
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize(400, 300);
+    setSize(400, 150);
+    getConstrainer()->setFixedAspectRatio(400.f / 150.f);
+    setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
+    startTimerHz(60);
 }
 
 PluginEditor::~PluginEditor() {
+    stopTimer();
 }
 
 void PluginEditor::paint(juce::Graphics &g) {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+    const auto time = juce::Time::getCurrentTime();
+    const auto timeString = time.toString(false, true, true, true);
+    g.setFont(getLocalBounds().toFloat().getHeight() * .5f);
 
-    auto area = getLocalBounds();
-    g.setColour(juce::Colours::white);
-    g.setFont(16.0f);
-    auto helloWorld = juce::String("Hello from ") + PRODUCT_NAME_WITHOUT_VERSION + " v"
-    VERSION + " running in " + CMAKE_BUILD_TYPE;
-    g.drawText(helloWorld, area.removeFromTop(150), juce::Justification::centred, false);
+    if (colourFlag == 0) {
+        g.fillAll(juce::Colours::white);
+        g.setColour(juce::Colours::black);
+        g.drawText(timeString, getLocalBounds(), juce::Justification::centred);
+    } else {
+        g.fillAll(juce::Colours::black);
+        g.setColour(juce::Colours::white);
+        g.drawText(timeString, getLocalBounds(), juce::Justification::centred);
+    }
+}
+
+void PluginEditor::mouseDown(const juce::MouseEvent &event) {
+    juce::ignoreUnused(event);
+    colourFlag = 1 - colourFlag;
 }
 
 void PluginEditor::resized() {
-    // layout the positions of your child components here
-    auto area = getLocalBounds();
-    area.removeFromBottom(50);
-    inspectButton.setBounds(getLocalBounds().withSizeKeepingCentre(100, 50));
+}
+
+void PluginEditor::timerCallback() {
+    repaint();
 }
