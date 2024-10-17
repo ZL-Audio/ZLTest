@@ -1,0 +1,77 @@
+name: macOS/Windows/Linux Test
+
+on:
+  push:
+    branches: [macos-oldest]
+  workflow_dispatch:
+
+# When pushing new commits, cancel any running builds on that branch
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: Builds
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DISPLAY: :0 # linux pluginval needs this
+  CMAKE_BUILD_PARALLEL_LEVEL: 3 # Use up to 3 cpus to build juceaide, etc
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
+
+# jobs are run in paralell on different machines
+# all steps run in series
+jobs:
+  build_and_test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
+      matrix:
+        include:
+          - name: macOS
+            os: macos-12
+            pluginval-binary: pluginval.app/Contents/MacOS/pluginval
+            plugin_os_format: "AU"
+
+    steps:
+      - name: Download current release assets (macOS)
+        uses: robinraju/release-downloader@v1.11
+        with:
+          latest: true
+          preRelease: true
+          fileName: "*.zip"
+          out-file-path: "current_release"
+
+      - name: Unzip plugin
+        shell: bash
+        run: |
+         cd current_release
+         unzip ZL.Equalizer.component.zip
+         ls
+
+      - name: Pluginval setup
+        shell: bash
+        run: |
+          curl -LO "https://github.com/Tracktion/pluginval/releases/download/v1.0.3/pluginval_${{ matrix.name }}.zip"
+          7z x pluginval_${{ matrix.name }}.zip
+          echo "PLUGINVAL_DISABLED=Plugin state restoration" >> $GITHUB_ENV
+
+      - name: Setup Pluginval random seed
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYYMMDD
+
+      - name: Pluginval AU validations (macOS)
+        if: ${{ matrix.name == 'macOS' }}
+        shell: bash
+        run: |
+          sudo cp -r "current_release/ZL Equalizer.component" "/Library/Audio/Plug-ins/components"
+          sudo killall -9 AudioComponentRegistrar
+          ${{ matrix.pluginval-binary }} --verbose --validate "/Library/Audio/Plug-ins/components/ZL Equalizer.component" --disabled-tests "${{ env.PLUGINVAL_DISABLED }}"
+        env:
+          STRICTNESS_LEVEL: 10
+          TIMEOUT_MS: 1440000
+          REPEAT: 1
+          RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
