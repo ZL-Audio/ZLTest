@@ -30,7 +30,7 @@ jobs:
       matrix:
         include:
           - name: macOS
-            os: macos-13
+            os: macos-12
             pluginval-binary: pluginval.app/Contents/MacOS/pluginval
             plugin_os_format: "AU"
 
