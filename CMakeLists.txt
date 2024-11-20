@@ -63,11 +63,11 @@ else ()
     endif ()
 endif ()
 
-# include boost for this project
-# find_package(Boost 1.80.0 REQUIRED)
-
 # Configures universal binaries in CI
 include(PamplejuceMacOS)
+
+# Sanitizer support, comment out to disable
+include(Sanitizer)
 
 # Couple tweaks that IMO should be JUCE defaults
 include(JUCEDefaults)
@@ -174,16 +174,12 @@ target_link_libraries(SharedCode
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
-#        Boost::boost)
 
 # Link the JUCE plugin targets our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)
-
-# Sanitizer support, comment out to disable
-include(Sanitizer)
 
 # A separate target keeps the Tests target fast!
 # include(Benchmarks)

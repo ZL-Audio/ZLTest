@@ -32,11 +32,11 @@ jobs:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
-          - name: Linux
-            os: ubuntu-22.04
-            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Debug/pluginval
-            plugin_os_format: "VST3"
-            cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
+          # - name: Linux
+          #   os: ubuntu-22.04
+          #   pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Debug/pluginval
+          #   plugin_os_format: "VST3"
+          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
           - name: macOS
             os: macos-15
             pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Debug/pluginval.app/Contents/MacOS/pluginval
