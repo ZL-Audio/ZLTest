@@ -182,6 +182,9 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 # IPP support, comment out to disable
 include(PamplejuceIPP)
 
+# Sanitizer support, comment out to disable
+include(Sanitizer)
+
 # A separate target keeps the Tests target fast!
 # include(Benchmarks)
 

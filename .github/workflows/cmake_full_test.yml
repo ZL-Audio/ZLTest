@@ -1,10 +1,6 @@
 name: macOS/Windows/Linux Test
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 # When pushing new commits, cancel any running builds on that branch
@@ -34,20 +30,14 @@ jobs:
           - name: Linux
             os: ubuntu-22.04
             pluginval-binary: ./pluginval
-            boost_platform_version: "22.04"
-            boost_toolset: "gcc"
             plugin_os_format: "VST3"
           - name: macOS
             os: macos-14
             pluginval-binary: pluginval.app/Contents/MacOS/pluginval
-            boost_platform_version: "11"
-            boost_toolset: "clang"
             plugin_os_format: "AU"
           - name: Windows
             os: windows-latest
             pluginval-binary: ./pluginval.exe
-            boost_platform_version: "2022"
-            boost_toolset: "msvc"
             plugin_os_format: "VST3"
 
     steps:
