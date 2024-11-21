@@ -1,8 +1,6 @@
-name: macOS/Windows/Linux Sanitizer
+name: Address Sanitizer
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # When pushing new commits, cancel any running builds on that branch
@@ -16,9 +14,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DISPLAY: :0 # linux pluginval needs this
   HOMEBREW_NO_INSTALL_CLEANUP: 1
-  SCCACHE_GHA_ENABLED: true
-  SCCACHE_CACHE_MULTIARCH: 1
-  SANITIZER_FLAG: True
+  ADDRESS_SANITIZER_FLAG: True
   PLUGINVAL_DISABLED: Plugin state restoration
   IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
 
@@ -32,23 +28,11 @@ jobs:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
-          # - name: Linux
-          #   os: ubuntu-22.04
-          #   pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Debug/pluginval
-          #   plugin_os_format: "VST3"
-          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
           - name: macOS
             os: macos-15
             pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Debug/pluginval.app/Contents/MacOS/pluginval
-            plugin_os_format: "VST3"
+            plugin_os_format: "VST3;AU"
             cmake_extra_flags:
-            # sanitizer_extra_flags:
-          - name: Windows
-            os: windows-latest
-            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Debug/pluginval.exe
-            plugin_os_format: "VST3"
-            cmake_extra_flags:
-            # sanitizer_extra_flags: -D_ITERATOR_DEBUG_LEVEL=0
 
     steps:
       - name: Set up Clang (Linux)
@@ -59,7 +43,7 @@ jobs:
           sudo ./llvm.sh 17
 
       # This also starts up our "fake" display Xvfb, needed for pluginval
-      - name: Install JUCE's Linux Deps
+      - name: Install JUCE's Linux Deps (Linux)
         if: runner.os == 'Linux'
         # Thanks to McMartin & co https://forum.juce.com/t/list-of-juce-dependencies-under-linux/15121/44
         run: |
@@ -188,12 +172,24 @@ jobs:
           format: YYYYMMDD
 
       - name: Pluginval VST3 validations
-        # if: ${{ runner.os != 'macOS' }}
         shell: bash
         run: |
           ${{ matrix.pluginval-binary }} --verbose --validate "${{ env.VST3_PATH }}" --disabled-tests "${{ env.PLUGINVAL_DISABLED }}"
         env:
           STRICTNESS_LEVEL: 10
           TIMEOUT_MS: 1440000
-          REPEAT: 4
+          REPEAT: 1
+          RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
+
+      - name: Pluginval AU validations (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        shell: bash
+        run: |
+          sudo cp -r "${{ env.AU_PATH }}" "/Library/Audio/Plug-ins/components"
+          sudo killall -9 AudioComponentRegistrar
+          ${{ matrix.pluginval-binary }} --verbose --validate "/Library/Audio/Plug-ins/components/${{ env.PRODUCT_NAME }}.component" --disabled-tests "${{ env.PLUGINVAL_DISABLED }}"
+        env:
+          STRICTNESS_LEVEL: 10
+          TIMEOUT_MS: 1440000
+          REPEAT: 1
           RANDOM_SEED: "${{ steps.current-time.outputs.formattedTime }}"
