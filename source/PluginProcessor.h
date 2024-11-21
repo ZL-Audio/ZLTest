@@ -6,7 +6,7 @@
 #include "ipps.h"
 #endif
 
-class PluginProcessor : public juce::AudioProcessor {
+class PluginProcessor : public juce::AudioProcessor , private juce::AsyncUpdater {
 public:
     PluginProcessor();
 
@@ -50,4 +50,11 @@ public:
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
+
+    int sampleNum = 0;
+    std::atomic<int> latency{2};
+
+    void handleAsyncUpdate() override {
+        setLatencySamples(latency.load());
+    }
 };
