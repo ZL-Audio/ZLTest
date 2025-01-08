@@ -1,3 +1,12 @@
+// Copyright (C) 2025 - zsliu98
+// This file is part of ZLDuckerTest
+//
+// ZLDuckerTest is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License Version 3 as published by the Free Software Foundation.
+//
+// ZLDuckerTest is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License along with ZLDuckerTest. If not, see <https://www.gnu.org/licenses/>.
+
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -6,8 +15,17 @@
 #include "ipps.h"
 #endif
 
-class PluginProcessor : public juce::AudioProcessor , private juce::AsyncUpdater {
+#include "dsp/chore_attach.hpp"
+#include "dsp/dsp.hpp"
+
+class PluginProcessor : public juce::AudioProcessor {
 public:
+    // zlState::DummyProcessor dummyProcessor;
+    juce::AudioProcessorValueTreeState parameters;
+    // juce::AudioProcessorValueTreeState parametersNA;
+    // juce::AudioProcessorValueTreeState state;
+    // zlState::Property property;
+
     PluginProcessor();
 
     ~PluginProcessor() override;
@@ -19,6 +37,12 @@ public:
     bool isBusesLayoutSupported(const BusesLayout &layouts) const override;
 
     void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
+
+    void processBlock(juce::AudioBuffer<double> &, juce::MidiBuffer &) override;
+
+    void processBlockBypassed(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages) override;
+
+    void processBlockBypassed(juce::AudioBuffer<double> &buffer, juce::MidiBuffer &midiMessages) override;
 
     juce::AudioProcessorEditor *createEditor() override;
 
@@ -48,13 +72,29 @@ public:
 
     void setStateInformation(const void *data, int sizeInBytes) override;
 
+    bool supportsDoublePrecisionProcessing() const override { return true; }
+
+    inline zlDSP::Controller<double> &getController() { return controller; }
+
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
+    zlDSP::Controller<double> controller;
+    zlDSP::ChoreAttach<double> choreAttach;
+    juce::AudioBuffer<double> doubleBuffer;
 
-    int sampleNum = 0;
-    std::atomic<int> latency{2};
+    enum ChannelLayout {
+        main1aux0, main1aux1, main1aux2,
+        main2aux0, main2aux1, main2aux2,
+        invalid
+    };
+    ChannelLayout channelLayout{invalid};
 
-    void handleAsyncUpdate() override {
-        setLatencySamples(latency.load());
-    }
+    void doubleBufferCopyFrom(int destChan, const juce::AudioBuffer<float> &buffer, int srcChan);
+
+    void doubleBufferCopyTo(int srcChan, juce::AudioBuffer<float> &buffer, int destChan) const;
+
+    void doubleBufferCopyFrom(int destChan, const juce::AudioBuffer<double> &buffer, int srcChan);
+
+    void doubleBufferCopyTo(int srcChan, juce::AudioBuffer<double> &buffer, int destChan) const;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
 };

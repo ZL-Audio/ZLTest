@@ -1,11 +1,11 @@
-// Copyright (C) 2024 - zsliu98
-// This file is part of ZLEqualizer
+// Copyright (C) 2025 - zsliu98
+// This file is part of ZLDuckerTest
 //
-// ZLEqualizer is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License Version 3 as published by the Free Software Foundation.
+// ZLDuckerTest is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License Version 3 as published by the Free Software Foundation.
 //
-// ZLEqualizer is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+// ZLDuckerTest is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 //
-// You should have received a copy of the GNU Affero General Public License along with ZLEqualizer. If not, see <https://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU Affero General Public License along with ZLDuckerTest. If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef ZLEQUALIZER_DSP_DEFINITIONS_HPP
 #define ZLEQUALIZER_DSP_DEFINITIONS_HPP
@@ -114,9 +114,32 @@ namespace zlDSP {
         }
     };
 
+    class strength : public FloatParameters<strength> {
+    public:
+        auto static constexpr ID = "strength";
+        auto static constexpr name = "Strength";
+        inline auto static const range = juce::NormalisableRange<float>(0.f, 1.f, 0.01f);
+        auto static constexpr defaultV = .5f;
+    };
+
+    class duckRange : public FloatParameters<duckRange> {
+    public:
+        auto static constexpr ID = "range";
+        auto static constexpr name = "Range";
+        inline auto static const range = juce::NormalisableRange<float>(0.f, 20.f, 0.01f);
+        auto static constexpr defaultV = 10.f;
+    };
+
+    class sideChain : public BoolParameters<sideChain> {
+    public:
+        auto static constexpr ID = "side_chain";
+        auto static constexpr name = "Side Chain";
+        auto static constexpr defaultV = false;
+    };
+
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
-        // layout.add();
+        layout.add(strength::get(), duckRange::get(), sideChain::get());
         return layout;
     }
 

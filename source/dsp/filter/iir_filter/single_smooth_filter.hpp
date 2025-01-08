@@ -7,8 +7,8 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLDuckerTest. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ZLEQUALIZER_SINGLE_FILTER_HPP
-#define ZLEQUALIZER_SINGLE_FILTER_HPP
+#ifndef SINGLE_SMOOTH_FILTER_HPP
+#define SINGLE_SMOOTH_FILTER_HPP
 
 #include <juce_dsp/juce_dsp.h>
 #include "../filter_design/filter_design.hpp"
@@ -23,10 +23,10 @@ namespace zlFilter {
      * @tparam FloatType the float type of input audio buffer
      * @tparam FilterSize the number of cascading filters
      */
-    template<typename FloatType, size_t FilterSize>
-    class IIR {
+    template<typename FloatType, size_t FilterSize, bool SmoothFreq, bool SmoothGain, bool SmoothQ>
+    class SmoothIIR {
     public:
-        IIR() = default;
+        SmoothIIR() = default;
 
         void reset() {
             if (toReset.exchange(false)) {
@@ -81,6 +81,9 @@ namespace zlFilter {
             }
             reset();
             if (toUpdatePara.exchange(false)) {
+                currentFreq = freq.load();
+                currentGain = gain.load();
+                currentQ = q.load();
                 updateCoeffs();
             }
         }
@@ -90,7 +93,7 @@ namespace zlFilter {
          * for parallel filter, call it with the internal parallel buffer
          * @param buffer
          */
-        template <bool isBypassed=false>
+        template<bool isBypassed = false>
         void process(juce::AudioBuffer<FloatType> &buffer) {
             switch (currentFilterStructure) {
                 case FilterStructure::iir: {
@@ -142,7 +145,7 @@ namespace zlFilter {
          * add the processed parallel buffer to the incoming audio buffer
          * @param buffer
          */
-        template <bool isBypassed=false>
+        template<bool isBypassed = false>
         void processParallelPost(juce::AudioBuffer<FloatType> &buffer) {
             if (isBypassed) return;
             for (int channel = 0; channel < buffer.getNumChannels(); ++channel) {
@@ -159,7 +162,7 @@ namespace zlFilter {
          * if frequency changes >= 2 octaves, the filter will reset
          * @param x frequency
          */
-        template <bool update=true>
+        template<bool update = true>
         void setFreq(const FloatType x) {
             const auto diff = std::max(static_cast<double>(x), freq.load()) /
                               std::min(static_cast<double>(x), freq.load());
@@ -176,7 +179,7 @@ namespace zlFilter {
          * set the gain of the filter
          * @param x gain
          */
-        template <bool update=true>
+        template<bool update = true>
         void setGain(const FloatType x) {
             gain.store(static_cast<double>(x));
             switch (filterType.load()) {
@@ -200,32 +203,10 @@ namespace zlFilter {
         FloatType getGain() const { return static_cast<FloatType>(gain.load()); }
 
         /**
-         * set gain and update coeffs immediately
-         * @param x gain
-         */
-        void setGainNow(FloatType x) {
-            gain.store(static_cast<double>(x));
-            switch (currentFilterStructure) {
-                case FilterStructure::iir:
-                case FilterStructure::svf: {
-                    updateCoeffs();
-                    break;
-                }
-                case FilterStructure::parallel: {
-                    if (shouldBeParallel) {
-                        updateParallelGain(x);
-                    } else {
-                        updateCoeffs();
-                    }
-                }
-            }
-        }
-
-        /**
          * set the Q value of the filter
          * @param x Q value
          */
-        template <bool update=true>
+        template<bool update = true>
         void setQ(const FloatType x) {
             q.store(static_cast<double>(x));
             if (update) { toUpdatePara.store(true); }
@@ -234,21 +215,59 @@ namespace zlFilter {
         inline FloatType getQ() const { return static_cast<FloatType>(q.load()); }
 
         /**
-         * set gain & Q and update coeffs immediately
-         * @param g1 gain
-         * @param q1 Q value
+         * set freq immediately
+         * @param x freq
          */
-        void setGainAndQNow(FloatType g1, FloatType q1) {
-            gain.store(static_cast<double>(g1));
-            q.store(static_cast<double>(q1));
-            updateCoeffs();
+        template<bool update = false>
+        void setFreqSync(const FloatType x) {
+            currentFreq = static_cast<double>(x);
+            if (update) {
+                updateCoeffs();
+            }
+        }
+
+        /**
+         * set gain immediately
+         * @param x gain
+         */
+        template<bool update = false>
+        void setGainSync(const FloatType x) {
+            currentGain = static_cast<double>(x);
+            if (update) {
+                switch (currentFilterStructure) {
+                    case FilterStructure::iir:
+                    case FilterStructure::svf: {
+                        updateCoeffs();
+                        break;
+                    }
+                    case FilterStructure::parallel: {
+                        if (shouldBeParallel) {
+                            updateParallelGain(x);
+                        } else {
+                            updateCoeffs();
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * set q immediately
+         * @param x q
+         */
+        template<bool update = false>
+        void setQSync(const FloatType x) {
+            currentQ = static_cast<double>(x);
+            if (update) {
+                updateCoeffs();
+            }
         }
 
         /**
          * set the type of the filter, the filter will always reset
          * @param x filter type
          */
-        template <bool update=true>
+        template<bool update = true>
         void setFilterType(const FilterType x) {
             toReset.store(true);
             filterType.store(x);
@@ -261,7 +280,7 @@ namespace zlFilter {
          * set the order of the filter, the filter will always reset
          * @param x filter order
          */
-        template <bool update=true>
+        template<bool update = true>
         void setOrder(const size_t x) {
             order.store(x);
             if (update) {
@@ -279,27 +298,27 @@ namespace zlFilter {
         void updateCoeffs() {
             if (!shouldBeParallel) {
                 currentFilterNum = updateIIRCoeffs(currentFilterType, order.load(),
-                                                   freq.load(), processSpec.sampleRate,
-                                                   gain.load(), q.load(), coeffs);
+                                                   currentFreq, processSpec.sampleRate,
+                                                   currentGain, currentQ, coeffs);
             } else {
                 if (currentFilterType == FilterType::peak) {
                     currentFilterNum = updateIIRCoeffs(FilterType::bandPass,
                                                        std::min(static_cast<size_t>(4), order.load()),
-                                                       freq.load(), processSpec.sampleRate,
-                                                       gain.load(), q.load(), coeffs);
+                                                       currentFreq, processSpec.sampleRate,
+                                                       currentGain, currentQ, coeffs);
                 } else if (currentFilterType == FilterType::lowShelf) {
                     currentFilterNum = updateIIRCoeffs(FilterType::lowPass,
                                                        std::min(static_cast<size_t>(2), order.load()),
-                                                       freq.load(), processSpec.sampleRate,
-                                                       gain.load(), q.load(), coeffs);
+                                                       currentFreq, processSpec.sampleRate,
+                                                       currentGain, currentQ, coeffs);
                 } else if (currentFilterType == FilterType::highShelf) {
                     currentFilterNum = updateIIRCoeffs(FilterType::highPass,
                                                        std::min(static_cast<size_t>(2), order.load()),
-                                                       freq.load(), processSpec.sampleRate,
-                                                       gain.load(), q.load(), coeffs);
+                                                       currentFreq, processSpec.sampleRate,
+                                                       currentGain, currentQ, coeffs);
                 }
 
-                updateParallelGain(gain.load());
+                updateParallelGain(currentGain);
             }
             switch (currentFilterStructure) {
                 case FilterStructure::iir:
@@ -344,7 +363,8 @@ namespace zlFilter {
         juce::AudioBuffer<FloatType> parallelBuffer;
 
         size_t currentFilterNum{1};
-        std::atomic<double> freq = 1000, gain = 0, q = 0.707;
+        std::atomic<double> freq{1000.0}, gain{0.0}, q{0.707};
+        double currentFreq{1000.0}, currentGain{0.0}, currentQ{0.707};
         std::atomic<size_t> order{2};
         std::atomic<FilterType> filterType{FilterType::peak};
         FilterType currentFilterType{FilterType::peak};
@@ -386,4 +406,4 @@ namespace zlFilter {
     };
 }
 
-#endif //ZLEQUALIZER_SINGLE_FILTER_HPP
+#endif //SINGLE_SMOOTH_FILTER_HPP
