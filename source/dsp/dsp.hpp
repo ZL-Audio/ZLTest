@@ -7,10 +7,10 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLDuckerTest. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ZLEqualizer_DSP_H
-#define ZLEqualizer_DSP_H
+#ifndef DSP_H
+#define DSP_H
 
 #include "dsp_definitions.hpp"
 #include "controller.hpp"
 
-#endif //ZLEqualizer_DSP_H
+#endif //DSP_H

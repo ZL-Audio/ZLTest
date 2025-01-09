@@ -40,6 +40,8 @@ namespace zlDSP {
             controllerRef.setStrength(static_cast<FloatType>(newValue));
         } else if (parameterID == duckRange::ID) {
             controllerRef.setDuckRange(static_cast<FloatType>(newValue));
+        } else if (parameterID == smooth::ID) {
+            controllerRef.setSmooth(static_cast<FloatType>(newValue));
         }
     }
 

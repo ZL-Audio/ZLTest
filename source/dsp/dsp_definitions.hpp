@@ -7,8 +7,8 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLDuckerTest. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ZLEQUALIZER_DSP_DEFINITIONS_HPP
-#define ZLEQUALIZER_DSP_DEFINITIONS_HPP
+#ifndef DSP_DEFINITIONS_HPP
+#define DSP_DEFINITIONS_HPP
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -124,10 +124,18 @@ namespace zlDSP {
 
     class duckRange : public FloatParameters<duckRange> {
     public:
-        auto static constexpr ID = "range";
+        auto static constexpr ID = "duck_range";
         auto static constexpr name = "Range";
         inline auto static const range = juce::NormalisableRange<float>(0.f, 20.f, 0.01f);
         auto static constexpr defaultV = 10.f;
+    };
+
+    class smooth : public FloatParameters<smooth> {
+    public:
+        auto static constexpr ID = "pass_smooth";
+        auto static constexpr name = "Smooth";
+        inline auto static const range = juce::NormalisableRange<float>(0.f, 1.f, 0.01f);
+        auto static constexpr defaultV = .5f;
     };
 
     class sideChain : public BoolParameters<sideChain> {
@@ -139,7 +147,7 @@ namespace zlDSP {
 
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
-        layout.add(strength::get(), duckRange::get(), sideChain::get());
+        layout.add(strength::get(), duckRange::get(), smooth::get(), sideChain::get());
         return layout;
     }
 
@@ -150,4 +158,4 @@ namespace zlDSP {
     }
 }
 
-#endif //ZLEQUALIZER_DSP_DEFINITIONS_HPP
+#endif //DSP_DEFINITIONS_HPP

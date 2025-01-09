@@ -12,6 +12,7 @@
 
 #include "dsp_definitions.hpp"
 #include "filter/filter.hpp"
+#include "container/container.hpp"
 
 namespace zlDSP {
     template<typename FloatType>
@@ -34,9 +35,20 @@ namespace zlDSP {
 
         void process(juce::AudioBuffer<FloatType> &buffer);
 
-        void setStrength(const FloatType x) { strength.store(x); }
+        void setStrength(const FloatType x) {
+            if (x < FloatType(0.5)) {
+                strength.store(std::sqrt(x / FloatType(2)));
+            } else {
+                strength.store(FloatType(0.2) * x + FloatType(0.4));
+            }
+        }
 
         void setDuckRange(const FloatType x) { range.store(x); }
+
+        void setSmooth(const FloatType x) {
+            focus.store(FloatType(1) - x);
+            toUpdateFocus.store(true);
+        }
 
         void setIsSide(const bool x) { useSide.store(x); }
 
@@ -47,7 +59,7 @@ namespace zlDSP {
 
         std::array<FloatType, FilterNum> mainPassRMS{}, auxPassRMS{};
         std::array<FloatType, FilterNum> currentGains{}, deltaGains{};
-        std::array<bool, FilterNum> isDucking{};
+        zlContainer::FixedMaxSizeArray<size_t, FilterNum> dynamicIndices{}, staticIndices{};
         std::array<zlFilter::SmoothIIR<FloatType, 1, false, false, false>, FilterNum> duckerFilters;
         std::array<zlFilter::SmoothIIR<FloatType, 1, false, false, false>, FilterNum> mainPassFilters;
         std::array<zlFilter::SmoothIIR<FloatType, 1, false, false, false>, FilterNum> auxPassFilters;
@@ -57,12 +69,14 @@ namespace zlDSP {
 
         int samplePerBuffer{1};
 
-        std::atomic<FloatType> strength{FloatType(0.5)}, range{FloatType(10)};
+        std::atomic<FloatType> strength{FloatType(0.5)}, range{FloatType(10)}, focus{FloatType(0.5)};
         FloatType currentStrength{FloatType(0.5)}, currentRange{FloatType(10)};
+
+        std::atomic<bool> toUpdateFocus{true};
 
         void processSubBuffer(juce::AudioBuffer<FloatType> &buffer);
 
-        juce::FileLogger logger{juce::File{"/Volumes/Ramdisk/log.txt"}, ""};
+        // juce::FileLogger logger{juce::File{"/Volumes/Ramdisk/log.txt"}, ""};
     };
 } // zlDSP
 
