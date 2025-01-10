@@ -130,10 +130,10 @@ namespace zlDSP {
         auto static constexpr defaultV = 10.f;
     };
 
-    class smooth : public FloatParameters<smooth> {
+    class focus : public FloatParameters<focus> {
     public:
-        auto static constexpr ID = "pass_smooth";
-        auto static constexpr name = "Smooth";
+        auto static constexpr ID = "pass_focus";
+        auto static constexpr name = "Focus";
         inline auto static const range = juce::NormalisableRange<float>(0.f, 1.f, 0.01f);
         auto static constexpr defaultV = .5f;
     };
@@ -147,7 +147,7 @@ namespace zlDSP {
 
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
-        layout.add(strength::get(), duckRange::get(), smooth::get(), sideChain::get());
+        layout.add(strength::get(), duckRange::get(), focus::get(), sideChain::get());
         return layout;
     }
 

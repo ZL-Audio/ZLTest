@@ -16,16 +16,12 @@ namespace zlDSP {
             duckerFilters[i].setFreq(static_cast<FloatType>(duckerPos[i]));
             duckerFilters[i].setFilterType(zlFilter::FilterType::peak);
             mainPassFilters[i].setFreq(static_cast<FloatType>(duckerPos[i]));
-            mainPassFilters[i].setQ(FloatType(2.8284271247461903 * 2.0));
             mainPassFilters[i].setFilterType(zlFilter::FilterType::bandPass);
             auxPassFilters[i].setFreq(static_cast<FloatType>(duckerPos[i]));
-            auxPassFilters[i].setQ(FloatType(2.8284271247461903 * 2.0));
             auxPassFilters[i].setFilterType(zlFilter::FilterType::bandPass);
 
             currentGains[i] = FloatType(0);
         }
-        setStrength(FloatType(0.5));
-        setSmooth(FloatType(0.5));
     }
 
     template<typename FloatType>
@@ -60,12 +56,14 @@ namespace zlDSP {
         currentRange = range.load();
         if (toUpdateFocus.exchange(false)) {
             const auto currentFocus = focus.load();
-            const auto currentQ = currentFocus < FloatType(0.5)
+            const auto currentDuckQ = FloatType(0.7071067811865476) + currentFocus * FloatType(0.7928932188134524);
+            const auto currentPassQ = currentFocus < FloatType(0.5)
                                       ? std::pow(FloatType(64), currentFocus)
                                       : FloatType(32) * currentFocus - FloatType(8);
             for (size_t i = 0; i < FilterNum; ++i) {
-                mainPassFilters[i].template setQSync<true>(currentQ);
-                auxPassFilters[i].template setQSync<true>(currentQ);
+                duckerFilters[i].template setQSync<true>(currentDuckQ);
+                mainPassFilters[i].template setQSync<true>(currentPassQ);
+                auxPassFilters[i].template setQSync<true>(currentPassQ);
             }
         }
         int startSample = 0;

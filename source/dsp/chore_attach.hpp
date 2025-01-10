@@ -31,11 +31,11 @@ namespace zlDSP {
         Controller<FloatType> &controllerRef;
 
         constexpr static std::array IDs{
-            sideChain::ID, strength::ID, duckRange::ID, smooth::ID
+            sideChain::ID, strength::ID, duckRange::ID, focus::ID
         };
         constexpr static std::array defaultVs{
             static_cast<float>(sideChain::defaultV),
-            strength::defaultV, duckRange::defaultV, smooth::defaultV
+            strength::defaultV, duckRange::defaultV, focus::defaultV
         };
 
         void parameterChanged(const juce::String &parameterID, float newValue) override;

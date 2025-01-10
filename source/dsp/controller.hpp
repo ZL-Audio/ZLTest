@@ -21,10 +21,10 @@ namespace zlDSP {
         static constexpr size_t FilterNum = 16;
 
         static constexpr std::array<double, 16> duckerPos = {
-            1.00000000e+01, 1.65984933e+01, 2.75509978e+01, 4.57305052e+01,
-            7.59057482e+01, 1.25992105e+02, 2.09127911e+02, 3.47120821e+02,
-            5.76168261e+02, 9.56352500e+02, 1.58740105e+03, 2.63484657e+03,
-            4.37344830e+03, 7.25926520e+03, 1.20492865e+04, 2.00000000e+04
+            1.25051561e+01, 2.01471012e+01, 3.24590660e+01, 5.22949160e+01,
+            8.42525240e+01, 1.35739539e+02, 2.18690452e+02, 3.52332960e+02,
+            5.67644877e+02, 9.14534669e+02, 1.47341004e+03, 2.37381612e+03,
+            3.82446355e+03, 6.16160674e+03, 9.92698641e+03, 1.59934029e+04
         };
 
         explicit Controller(juce::AudioProcessor &processor);
@@ -45,8 +45,8 @@ namespace zlDSP {
 
         void setDuckRange(const FloatType x) { range.store(x); }
 
-        void setSmooth(const FloatType x) {
-            focus.store(FloatType(1) - x);
+        void setFocus(const FloatType x) {
+            focus.store(x);
             toUpdateFocus.store(true);
         }
 
