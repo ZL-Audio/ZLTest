@@ -22,6 +22,9 @@ def main():
     # title
     title = ET.SubElement(root, "title")
     title.text = "{} {}".format(product_name, version)
+    # min os version
+    allowed_os_version = ET.SubElement(root, "allowed-os-versions")
+    ET.SubElement(allowed_os_version, "os-version", min="10.13")
     # EULA
     if os.path.isfile("packaging/EULA"):
         eula = ET.SubElement(root, "license", file="EULA")
