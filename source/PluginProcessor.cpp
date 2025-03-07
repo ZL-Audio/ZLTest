@@ -134,12 +134,12 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         // ..do something to the data...
     }
 
-    sampleNum += buffer.getNumSamples();
-    if (sampleNum >= 4800) {
-        sampleNum = 0;
-        latency.store(10 - latency.load());
-        triggerAsyncUpdate();
-    }
+    // sampleNum += buffer.getNumSamples();
+    // if (sampleNum >= 4800) {
+    //     sampleNum = 0;
+    //     latency.store(10 - latency.load());
+    //     triggerAsyncUpdate();
+    // }
 }
 
 //==============================================================================
