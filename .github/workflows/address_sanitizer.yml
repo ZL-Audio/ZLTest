@@ -32,7 +32,7 @@ jobs:
             os: macos-15
             pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Debug/pluginval.app/Contents/MacOS/pluginval
             plugin_os_format: "VST3;AU"
-            cmake_extra_flags:
+            cmake_extra_flags: -DWITH_ADDRESS_SANITIZER=ON -DWITH_THREAD_SANITIZER=OFF
 
     steps:
       - name: Set up Clang (Linux)
@@ -154,7 +154,7 @@ jobs:
       - name: Configure Pluginval
         shell: bash
         working-directory: ./pluginval
-        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }}
+        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }} -DWITH_ADDRESS_SANITIZER=ON -DWITH_THREAD_SANITIZER=OFF
         env:
           PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
 
