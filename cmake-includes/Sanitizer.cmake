@@ -3,6 +3,7 @@ option(WITH_THREAD_SANITIZER "Enable Thread Sanitizer" OFF)
 
 message(STATUS "Sanitizers: ASan=${WITH_ADDRESS_SANITIZER} TSan=${WITH_THREAD_SANITIZER}")
 if (WITH_ADDRESS_SANITIZER)
+    message("${CMAKE_CXX_COMPILER_ID}")
     if (MSVC)
         add_compile_options(/fsanitize=address)
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
