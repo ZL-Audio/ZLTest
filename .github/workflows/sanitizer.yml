@@ -25,12 +25,6 @@ jobs:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
-          - name: Linux Address Sanitizer
-            os: ubuntu-latest
-            build_type: Release
-            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Release/pluginval
-            plugin_os_format: "VST3"
-            cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWITH_ADDRESS_SANITIZER=ON -DWITH_THREAD_SANITIZER=OFF
           - name: macOS Address Sanitizer
             os: macos-latest
             build_type: Debug
@@ -49,6 +43,14 @@ jobs:
             pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Release/pluginval.exe
             plugin_os_format: "VST3"
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWITH_ADDRESS_SANITIZER=ON -DWITH_THREAD_SANITIZER=OFF
+            pluginval_cmake_extra_flags: -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          - name: Windows Thread Sanitizer
+            os: windows-latest
+            build_type: Release
+            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/Release/pluginval.exe
+            plugin_os_format: "VST3"
+            cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWITH_ADDRESS_SANITIZER=OFF -DWITH_THREAD_SANITIZER=ON
+            pluginval_cmake_extra_flags: -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
 
     steps:
       - name: Set up Clang (Linux)
@@ -120,7 +122,7 @@ jobs:
       - name: Configure Pluginval
         shell: bash
         working-directory: ./pluginval
-        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }}
+        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }} ${{ matrix.pluginval_cmake_extra_flags }}
         env:
           PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
 
