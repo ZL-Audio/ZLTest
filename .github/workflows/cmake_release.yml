@@ -217,7 +217,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
+        fetch-depth: 1
         fetch-tags: true
+        ref: ${{ github.ref }}
 
     - name: Get Artifacts
       uses: actions/download-artifact@v4
