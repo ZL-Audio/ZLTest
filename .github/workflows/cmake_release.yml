@@ -217,8 +217,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        submodules: recursive
-        fetch-depth: 0
+        fetch-tags: true
 
     - name: Get Artifacts
       uses: actions/download-artifact@v4
@@ -229,12 +228,3 @@ jobs:
       run: |
         ls
         gh release create ${{ github.ref_name }} --prerelease installers/*/*.exe installers/*/*.zip installers/*/*.dmg
-      # uses: softprops/action-gh-release@v2
-      # with:
-      #   prerelease: true
-      #   # download-artifact puts these files in their own dirs...
-      #   # Using globs sidesteps having to pass the version around
-      #   files: |
-      #     */*.exe
-      #     */*.zip
-      #     */*.dmg
