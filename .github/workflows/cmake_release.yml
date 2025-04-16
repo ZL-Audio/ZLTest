@@ -26,12 +26,12 @@ jobs:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
-          - name: Linux
+          - name: Linux-x86
             os: ubuntu-22.04
             plugin_os_format: "VST3;LV2;Standalone"
             app_suffix: ""
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
-          - name: Linux-ARM64
+          - name: Linux-ARM
             os: ubuntu-22.04-arm
             plugin_os_format: "VST3;LV2;Standalone"
             app_suffix: ""
@@ -41,8 +41,13 @@ jobs:
             plugin_os_format: "VST3;AU;Standalone"
             app_suffix: ".app"
             cmake_extra_flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
-          - name: Windows
+          - name: Windows-x86
             os: windows-latest
+            plugin_os_format: "VST3;LV2;Standalone"
+            app_suffix: ".exe"
+            cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          - name: Windows-ARM
+            os: windows-11-arm
             plugin_os_format: "VST3;LV2;Standalone"
             app_suffix: ".exe"
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
