@@ -179,12 +179,12 @@ target_link_libraries(SharedCode
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 
 # add kfr
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(KFR_ENABLE_MULTIARCH ON)
+# set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# set(KFR_ENABLE_MULTIARCH ON)
 
-add_subdirectory(kfr)
+# add_subdirectory(kfr)
 
-target_link_libraries("${PROJECT_NAME}" PUBLIC kfr kfr_dft)
+# target_link_libraries("${PROJECT_NAME}" PUBLIC kfr kfr_dft)
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)
