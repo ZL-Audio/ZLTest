@@ -176,7 +176,7 @@ target_link_libraries(SharedCode
         juce::juce_recommended_warning_flags)
 
 # add kfr
-set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(kfr)
 
