@@ -77,7 +77,7 @@ jobs:
         shell: bash
         run: |
           choco install ninja
-          choco upgrade llvm
+          choco upgrade llvm --version 18.1.8
 
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
