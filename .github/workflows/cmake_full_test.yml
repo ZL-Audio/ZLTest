@@ -48,7 +48,6 @@ jobs:
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
 
     steps:
-
       # This also starts up our "fake" display Xvfb, needed for pluginval
       - name: Install JUCE's Linux Deps (Linux)
         if: runner.os == 'Linux'
@@ -90,13 +89,6 @@ jobs:
         run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }} .
         env:
           PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
-
-      - name: display cmake cache
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          ls
-          cat Builds/CMakeCache.txt
 
       - name: Build
         shell: bash
