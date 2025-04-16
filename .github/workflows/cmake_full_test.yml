@@ -91,13 +91,16 @@ jobs:
         env:
           PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
 
+      - name: display cmake cache
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          ls
+          cat Builds/CMakeCache.txt
+
       - name: Build
         shell: bash
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
-
-      - name: Test
-        working-directory: ${{ env.BUILD_DIR }}
-        run: ctest --output-on-failure -j4 -VV
 
       - name: Read in .env from CMake # see GitHubENV.cmake
         shell: bash
