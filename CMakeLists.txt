@@ -177,6 +177,7 @@ target_link_libraries(SharedCode
 
 # add kfr
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(KFR_ENABLE_MULTIARCH ON)
 
 add_subdirectory(kfr)
 

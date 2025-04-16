@@ -64,7 +64,7 @@ jobs:
       - name: Install Ninja (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: choco install ninja
+        run: choco install ninja --no-progress -y
 
       - name: Install macOS Deps (macOS)
         if: ${{ runner.os == 'macOS' }}
