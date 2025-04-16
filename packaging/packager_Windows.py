@@ -21,14 +21,26 @@ def main():
 #define Version Trim(FileRead(FileOpen("..\VERSION")))
 #define ProjectName GetEnv('PROJECT_NAME')
 #define ProductName GetEnv('PRODUCT_NAME')
+#define ArtifactName GetEnv('ARTIFACT_NAME')
 #define Publisher GetEnv('COMPANY_NAME')
 #define Year GetDateTimeString("yyyy","","")
-
+''')
+    if "arm" in artifact_name or "ARM" in artifact_name:
+        outfile.write(r'''          
 [Setup]
-ArchitecturesInstallIn64BitMode=x64
-ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=arm64
+ArchitecturesAllowed=arm64
+''')
+    else:
+        outfile.write(r'''          
+[Setup]
+ArchitecturesInstallIn64BitMode=x64compatible
+ArchitecturesAllowed=x64compatible
+''')
+
+    outfile.write(r'''
 AppName={#ProductName}
-OutputBaseFilename={#ProductName}-{#Version}-Windows
+OutputBaseFilename={#ArtifactName}
 AppCopyright=Copyright (C) {#Year} {#Publisher}
 AppPublisher={#Publisher}
 AppVersion={#Version}
