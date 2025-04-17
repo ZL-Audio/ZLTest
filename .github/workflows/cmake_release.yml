@@ -40,16 +40,14 @@ jobs:
             os: macos-15
             plugin_os_format: "VST3;AU;Standalone"
             app_suffix: ".app"
-            cmake_extra_flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+            cmake_extra_flags: -DCMAKE_OSX_ARCHITECTURES="arm64"
           - name: Windows-x86
             os: windows-latest
-            arch: x64
             plugin_os_format: "VST3;LV2;Standalone"
             app_suffix: ".exe"
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
           - name: Windows-ARM
             os: windows-11-arm
-            arch: amd64_arm64
             plugin_os_format: "VST3;LV2;Standalone"
             app_suffix: ".exe"
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
@@ -73,8 +71,6 @@ jobs:
       - name: Set up Developer Command Prompt (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ matrix.arch }}
 
       - name: Install Ninja (Windows)
         if: runner.os == 'Windows'
@@ -139,6 +135,11 @@ jobs:
           echo "LV2_PATH=$ARTIFACTS_PATH/LV2/${{ env.PRODUCT_NAME }}.lv2" >> $GITHUB_ENV
           echo "Standalone_PATH=$ARTIFACTS_PATH/Standalone/${{ env.PRODUCT_NAME }}${{ matrix.app_suffix }}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
+
+      - name: check windows arch
+        if: ${{ runner.os == 'Windows' }}
+        shell: cmd
+        run: DUMPBIN ${{ env.VST3_PATH }}
 
       - name: Codesign and Create Individual Packages (macOS)
         if: ${{ runner.os == 'macOS' }}
