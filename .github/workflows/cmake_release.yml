@@ -43,11 +43,13 @@ jobs:
             cmake_extra_flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
           - name: Windows-x86
             os: windows-latest
+            arch: x64
             plugin_os_format: "VST3;LV2;Standalone"
             app_suffix: ".exe"
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
           - name: Windows-ARM
             os: windows-11-arm
+            arch: amd64_arm64
             plugin_os_format: "VST3;LV2;Standalone"
             app_suffix: ".exe"
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
@@ -71,6 +73,8 @@ jobs:
       - name: Set up Developer Command Prompt (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
 
       - name: Install Ninja (Windows)
         if: runner.os == 'Windows'

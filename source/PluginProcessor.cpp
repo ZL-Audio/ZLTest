@@ -76,7 +76,6 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused(sampleRate, samplesPerBlock);
-    triggerAsyncUpdate();
 }
 
 void PluginProcessor::releaseResources() {
@@ -133,13 +132,6 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         juce::ignoreUnused(channelData);
         // ..do something to the data...
     }
-
-    // sampleNum += buffer.getNumSamples();
-    // if (sampleNum >= 4800) {
-    //     sampleNum = 0;
-    //     latency.store(10 - latency.load());
-    //     triggerAsyncUpdate();
-    // }
 }
 
 //==============================================================================

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PluginProcessor.h"
-#include "BinaryData.h"
 
 //==============================================================================
 class PluginEditor : public juce::AudioProcessorEditor {
