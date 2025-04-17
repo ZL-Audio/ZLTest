@@ -136,10 +136,10 @@ jobs:
           echo "Standalone_PATH=$ARTIFACTS_PATH/Standalone/${{ env.PRODUCT_NAME }}${{ matrix.app_suffix }}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
-      - name: check windows arch
+      - name: Check windows arch
         if: ${{ runner.os == 'Windows' }}
         shell: cmd
-        run: DUMPBIN ${{ env.VST3_PATH }}
+        run: DUMPBIN /headers "${{ env.Standalone_PATH }}"
 
       - name: Codesign and Create Individual Packages (macOS)
         if: ${{ runner.os == 'macOS' }}
