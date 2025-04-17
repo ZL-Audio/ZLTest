@@ -48,6 +48,12 @@ jobs:
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
       # This also starts up our "fake" display Xvfb, needed for pluginval
       - name: Install JUCE's Linux Deps (Linux)
         if: runner.os == 'Linux'
@@ -70,12 +76,6 @@ jobs:
       - name: Install macOS Deps (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: brew install ninja osxutils
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
 
       - name: Import Certificates (macOS)
         uses: apple-actions/import-codesign-certs@v3 # only exists as a tag right now
