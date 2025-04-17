@@ -1,0 +1,12 @@
+name: 'Setup MSVC Developer Command Prompt'
+description: 'Sets up a Developer Command Prompt for Microsoft Visual C++ for x86_64 and ARM64 runners'
+inputs:
+  arch:
+    description: 'Target architecture (x64, arm64, x86, x64_arm64, etc.)'
+    required: true
+  vsversion:
+    description: 'Visual Studio version (e.g., 2019, 2022, or 16.0, 17.0)'
+    required: false
+runs:
+  using: 'node16'
+  main: 'index.js'
