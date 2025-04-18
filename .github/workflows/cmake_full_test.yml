@@ -65,7 +65,7 @@ jobs:
       - name: Set up Developer Command Prompt (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: npm i @actions/core @actions/exec path
+        run: npm i @actions/core @actions/exec path fs
 
       - name: Set up Developer Command Prompt (Windows)
         if: runner.os == 'Windows'

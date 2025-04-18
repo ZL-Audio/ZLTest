@@ -1,6 +1,7 @@
 const core = require('@actions/core');
 const exec = require('@actions/exec');
 const path = require('path');
+const fs = require('fs');
 
 async function run() {
   try {
@@ -12,8 +13,8 @@ async function run() {
       'x64': 'x64',
       'arm64': 'arm64',
       'x86': 'x86',
-      'x64_arm64': 'x64_arm64', // Cross-compile ARM64 on x64
-      'x64_x86': 'x64_x86',     // Cross-compile x86 on x64
+      'x64_arm64': 'x64_arm64',
+      'x64_x86': 'x64_x86',
       'amd64': 'x64',
       'amd64_arm64': 'x64_arm64',
       'amd64_x86': 'x64_x86',
@@ -32,19 +33,29 @@ async function run() {
     let vswherePath = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe';
     let vsInstallPath = '';
 
-    let vswhereArgs = ['-latest', '-products *', '-requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property installationPath'];
+    let vswhereArgs = ['-latest', '-products*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property', 'installationPath'];
     if (vsVersion) {
       vswhereArgs.push('-version', vsVersion);
     }
 
     let vswhereOutput = '';
-    await exec.exec(`"${vswherePath}"`, vswhereArgs, {
+    let vswhereError = '';
+    const vswhereExitCode = await exec.exec(`"${vswherePath}"`, vswhereArgs, {
       listeners: {
         stdout: (data) => {
           vswhereOutput += data.toString();
+        },
+        stderr: (data) => {
+          vswhereError += data.toString();
         }
-      }
+      },
+      ignoreReturnCode: true
     });
+
+    if (vswhereExitCode !== 0) {
+      core.setFailed(`vswhere failed with exit code ${vswhereExitCode}: ${vswhereError}`);
+      return;
+    }
 
     vsInstallPath = vswhereOutput.trim();
     if (!vsInstallPath) {
@@ -55,6 +66,12 @@ async function run() {
     // Path to vcvarsall.bat
     const vcvarsPath = path.join(vsInstallPath, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat');
 
+    // Verify vcvarsall.bat exists
+    if (!fs.existsSync(vcvarsPath)) {
+      core.setFailed(`vcvarsall.bat not found at ${vcvarsPath}`);
+      return;
+    }
+
     // Create a temporary batch file to capture environment variables
     const tempBat = 'msvc-dev-cmd.bat';
     const batContent = `
@@ -64,17 +81,27 @@ async function run() {
       set
     `;
 
-    require('fs').writeFileSync(tempBat, batContent);
+    fs.writeFileSync(tempBat, batContent);
 
     // Run the batch file and capture environment
     let envOutput = '';
-    await exec.exec('cmd.exe', ['/q', '/c', tempBat], {
+    let envError = '';
+    const envExitCode = await exec.exec('cmd.exe', ['/q', '/c', tempBat], {
       listeners: {
         stdout: (data) => {
           envOutput += data.toString();
+        },
+        stderr: (data) => {
+          envError += data.toString();
         }
-      }
+      },
+      ignoreReturnCode: true
     });
+
+    if (envExitCode !== 0) {
+      core.setFailed(`Failed to run vcvarsall.bat: ${envError}`);
+      return;
+    }
 
     // Parse and set environment variables
     envOutput.split('\n').forEach(line => {
@@ -86,12 +113,22 @@ async function run() {
 
     // Ensure MSVC linker is prioritized over GNU tools
     const msLinkPath = path.join(vsInstallPath, 'VC', 'Tools', 'MSVC');
-    const msLinkVersion = require('fs').readdirSync(msLinkPath)[0]; // Get latest MSVC version
+    const msLinkVersions = fs.readdirSync(msLinkPath);
+    if (msLinkVersions.length === 0) {
+      core.setFailed('No MSVC toolset found in ' + msLinkPath);
+      return;
+    }
+    const msLinkVersion = msLinkVersions[0]; // Get latest MSVC version
     const binPath = path.join(msLinkPath, msLinkVersion, 'bin', `Host${vcvarsArch.includes('arm64') ? 'arm64' : 'x64'}`, vcvarsArch.includes('x86') ? 'x86' : vcvarsArch);
     core.addPath(binPath);
 
   } catch (error) {
     core.setFailed(`Action failed: ${error.message}`);
+  } finally {
+    // Clean up temporary batch file
+    if (fs.existsSync('msvc-dev-cmd.bat')) {
+      fs.unlinkSync('msvc-dev-cmd.bat');
+    }
   }
 }
 
