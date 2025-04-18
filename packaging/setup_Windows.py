@@ -1,7 +1,6 @@
 import os
-import subprocess
-import sys
 import platform
+import sys
 from pathlib import Path
 
 def setup_windows_sdk_environment():
@@ -9,6 +8,12 @@ def setup_windows_sdk_environment():
     is_arm64 = platform.machine().lower() in ('arm64', 'aarch64')
     arch = "arm64" if is_arm64 else "x64"
     print(f"Detected architecture: {arch}")
+    
+    # Create environment file for GitHub Actions
+    env_file = os.environ.get('GITHUB_ENV')
+    if not env_file:
+        print("GITHUB_ENV not set, cannot update environment variables")
+        return False
     
     # Find Windows SDK installation path
     program_files = os.environ.get('ProgramFiles(x86)', 'C:\\Program Files (x86)')
@@ -87,12 +92,6 @@ def setup_windows_sdk_environment():
         if msvc_include_path:
             break
     
-    # Set environment variables
-    if 'INCLUDE' in os.environ:
-        os.environ['INCLUDE'] = ';'.join(include_paths) + ';' + os.environ['INCLUDE']
-    else:
-        os.environ['INCLUDE'] = ';'.join(include_paths)
-    
     # Set LIB environment variable - architecture specific
     lib_paths = [
         str(sdk_root / 'Lib' / latest_version / 'um' / arch),
@@ -105,45 +104,28 @@ def setup_windows_sdk_environment():
         if msvc_lib_path.exists():
             lib_paths.append(str(msvc_lib_path))
     
-    if 'LIB' in os.environ:
-        os.environ['LIB'] = ';'.join(lib_paths) + ';' + os.environ['LIB']
-    else:
-        os.environ['LIB'] = ';'.join(lib_paths)
-    
-    # Set PATH to include the right architecture tools
+    # Add Windows SDK tools path to PATH
     bin_paths = []
-    
-    # Add Windows SDK tools path
     sdk_bin_path = sdk_root / 'bin' / latest_version / arch
     if sdk_bin_path.exists():
         bin_paths.append(str(sdk_bin_path))
     
-    # Add MSVC bin path
+    # Add MSVC bin path to PATH
     if msvc_include_path:
         msvc_bin_path = msvc_include_path.parent / 'bin' / 'Host' / arch / arch
         if msvc_bin_path.exists():
             bin_paths.append(str(msvc_bin_path))
     
-    if bin_paths:
-        if 'PATH' in os.environ:
-            os.environ['PATH'] = ';'.join(bin_paths) + ';' + os.environ['PATH']
-        else:
-            os.environ['PATH'] = ';'.join(bin_paths)
+    # Write to GitHub environment file
+    with open(env_file, 'a', encoding='utf-8') as f:
+        # Append to existing INCLUDE if present
+        f.write(f"INCLUDE={';'.join(include_paths)}\n")
+        f.write(f"LIB={';'.join(lib_paths)}\n")
+        if bin_paths:
+            f.write(f"PATH={';'.join(bin_paths)};{os.environ.get('PATH', '')}\n")
     
-    print(f"INCLUDE paths: {os.environ['INCLUDE']}")
-    print(f"LIB paths: {os.environ['LIB']}")
+    print("Environment variables set in GITHUB_ENV file")
     return True
 
 if __name__ == "__main__":
-    if setup_windows_sdk_environment():
-        # Run the original command with the fixed environment
-        if len(sys.argv) > 1:
-            cmd = sys.argv[1:]
-            print(f"Running command: {' '.join(cmd)}")
-            result = subprocess.run(cmd)
-            sys.exit(result.returncode)
-        else:
-            print("Environment configured successfully. No command to run.")
-    else:
-        print("Failed to set up Windows SDK environment")
-        sys.exit(1)
+    setup_windows_sdk_environment()
