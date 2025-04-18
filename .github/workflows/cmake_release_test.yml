@@ -55,12 +55,18 @@ jobs:
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype-dev libfontconfig1-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev xvfb ninja-build
           sudo /usr/bin/Xvfb $DISPLAY &
 
-      - name: Install Ninja (Windows)
+      - name: Install Ninja & LLVM (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
           choco install ninja --no-progress -y
           choco upgrade llvm --version 18.1.8 --no-progress -y
+
+      - name: Install CMake (Windows-arm workaround)
+        if: matrix.name == 'Windows-arm'
+        shell: bash
+        run: |
+          choco install cmake.install --installargs '"ADD_CMAKE_TO_PATH=User"'
 
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
