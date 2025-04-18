@@ -150,10 +150,10 @@ async function run() {
     core.exportVariable('CXX', 'clang-cl.exe');
     core.exportVariable('CMAKE_LINKER', 'lld-link.exe');
 
-    // Set linker flags to include MSVC CRT
-    const crtLib = targetArch === 'x86' ? 'libcmt.lib' : 'libcmt.lib'; // Use libcmtd.lib for debug if needed
-    core.exportVariable('CMAKE_C_LINK_FLAGS', `/LIBPATH:"${libPath}" ${crtLib}`);
-    core.exportVariable('CMAKE_CXX_LINK_FLAGS', `/LIBPATH:"${libPath}" ${crtLib}`);
+    // Set linker flags to include MSVC CRT (dynamic CRT for -MDd)
+    const crtLib = 'msvcrtd.lib'; // Dynamic debug CRT for -MDd
+    core.exportVariable('CMAKE_EXE_LINKER_FLAGS', `/LIBPATH:"${libPath}" ${crtLib}`);
+    core.exportVariable('CMAKE_CXX_LINKER_FLAGS', `/LIBPATH:"${libPath}" ${crtLib}`);
 
   } catch (error) {
     core.setFailed(`Action failed: ${error.message}`);
