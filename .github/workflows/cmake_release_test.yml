@@ -34,7 +34,7 @@ jobs:
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
           - name: Windows-arm
             os: windows-11-arm
-            plugin_os_format: "VST3;LV2;Standalone"
+            plugin_os_format: "VST3;Standalone"
             app_suffix: ".exe"
             vcvars64_path: '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsarm64.bat"'
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_SYSTEM_PROCESSOR=ARM64 -DCMAKE_HOST_SYSTEM_PROCESSOR=ARM64 -DCMAKE_C_FLAGS="--target=arm64-pc-windows-msvc" -DCMAKE_CXX_FLAGS="--target=arm64-pc-windows-msvc" -DCMAKE_EXE_LINKER_FLAGS="/MACHINE:ARM64" -DCMAKE_SHARED_LINKER_FLAGS="/MACHINE:ARM64" -DKFR_ARCH=arm64 -DJUCE_TARGET_ARCHITECTURE=arm64
@@ -61,12 +61,6 @@ jobs:
         run: |
           choco install ninja --no-progress -y
           choco upgrade llvm --version 18.1.8 --no-progress -y
-
-      - name: Install CMake (Windows-arm workaround)
-        if: matrix.name == 'Windows-arm'
-        shell: bash
-        run: |
-          choco upgrade cmake.install --installargs '"ADD_CMAKE_TO_PATH=User"' --force
 
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
