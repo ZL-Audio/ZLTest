@@ -132,13 +132,6 @@ jobs:
           echo "Standalone_PATH=$ARTIFACTS_PATH/Standalone/${{ env.PRODUCT_NAME }}${{ matrix.app_suffix }}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
-      - name: Check windows arch
-        if: ${{ runner.os == 'Windows' }}
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          DUMPBIN /headers "${{ env.Standalone_PATH }}"
-
       - name: Codesign and Create Individual Packages (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: |
