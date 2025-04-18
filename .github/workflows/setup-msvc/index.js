@@ -33,13 +33,14 @@ async function run() {
     let vswherePath = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe';
     let vsInstallPath = '';
 
-    let vswhereArgs = ['-latest', '-products*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property', 'installationPath'];
+    let vswhereArgs = ['-latest', '-products', '*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property', 'installationPath'];
     if (vsVersion) {
       vswhereArgs.push('-version', vsVersion);
     }
 
     let vswhereOutput = '';
     let vswhereError = '';
+    core.debug(`Running vswhere with args: ${vswhereArgs.join(' ')}`);
     const vswhereExitCode = await exec.exec(`"${vswherePath}"`, vswhereArgs, {
       listeners: {
         stdout: (data) => {
@@ -62,6 +63,8 @@ async function run() {
       core.setFailed('Could not find Visual Studio installation');
       return;
     }
+
+    core.debug(`Found Visual Studio installation at: ${vsInstallPath}`);
 
     // Path to vcvarsall.bat
     const vcvarsPath = path.join(vsInstallPath, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat');
@@ -86,6 +89,7 @@ async function run() {
     // Run the batch file and capture environment
     let envOutput = '';
     let envError = '';
+    core.debug(`Running ${tempBat} to set up environment for ${vcvarsArch}`);
     const envExitCode = await exec.exec('cmd.exe', ['/q', '/c', tempBat], {
       listeners: {
         stdout: (data) => {
@@ -121,6 +125,8 @@ async function run() {
     const msLinkVersion = msLinkVersions[0]; // Get latest MSVC version
     const binPath = path.join(msLinkPath, msLinkVersion, 'bin', `Host${vcvarsArch.includes('arm64') ? 'arm64' : 'x64'}`, vcvarsArch.includes('x86') ? 'x86' : vcvarsArch);
     core.addPath(binPath);
+
+    core.debug(`Added MSVC bin path to PATH: ${binPath}`);
 
   } catch (error) {
     core.setFailed(`Action failed: ${error.message}`);
