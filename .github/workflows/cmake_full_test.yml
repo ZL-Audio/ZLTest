@@ -91,8 +91,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          python3 packaging/setup_Windows.py
-          cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
+          python3 packaging/setup_Windows.py cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
 
       - name: Read in .env from CMake # see GitHubENV.cmake
         shell: bash
