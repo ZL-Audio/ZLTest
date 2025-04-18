@@ -64,6 +64,11 @@ jobs:
 
       - name: Set up Developer Command Prompt (Windows)
         if: runner.os == 'Windows'
+        shell: bash
+        run: npm i @actions/core @actions/exec path
+
+      - name: Set up Developer Command Prompt (Windows)
+        if: runner.os == 'Windows'
         uses: ./.github/workflows/setup-msvc
         with:
           arch: "x86"
