@@ -76,7 +76,7 @@ async function run() {
     }
 
     // Create a temporary batch file to capture environment variables
-    const tempBat = 'msvc-dev-cmd.bat';
+    const tempBat = 'clang-cl-dev-cmd.bat';
     const batContent = `
       @echo off
       call "${vcvarsPath}" ${vcvarsArch}
@@ -115,7 +115,16 @@ async function run() {
       }
     });
 
-    // Ensure MSVC linker is prioritized over GNU tools
+    // Add LLVM bin directory to PATH for clang-cl.exe and lld-link.exe
+    const llvmBinPath = 'C:\\Program Files\\LLVM\\bin';
+    if (!fs.existsSync(llvmBinPath)) {
+      core.setFailed(`LLVM bin directory not found at ${llvmBinPath}`);
+      return;
+    }
+    core.addPath(llvmBinPath);
+    core.debug(`Added LLVM bin path to PATH: ${llvmBinPath}`);
+
+    // Set MSVC library path for lld-link.exe
     const msLinkPath = path.join(vsInstallPath, 'VC', 'Tools', 'MSVC');
     const msLinkVersions = fs.readdirSync(msLinkPath);
     if (msLinkVersions.length === 0) {
@@ -123,17 +132,35 @@ async function run() {
       return;
     }
     const msLinkVersion = msLinkVersions[0]; // Get latest MSVC version
-    const binPath = path.join(msLinkPath, msLinkVersion, 'bin', `Host${vcvarsArch.includes('arm64') ? 'arm64' : 'x64'}`, vcvarsArch.includes('x86') ? 'x86' : vcvarsArch);
-    core.addPath(binPath);
+    const targetArch = vcvarsArch.includes('x86') ? 'x86' : vcvarsArch.includes('arm64') ? 'arm64' : 'x64';
+    const libPath = path.join(msLinkPath, msLinkVersion, 'lib', targetArch);
+    if (!fs.existsSync(libPath)) {
+      core.setFailed(`MSVC library directory not found at ${libPath}`);
+      return;
+    }
 
-    core.debug(`Added MSVC bin path to PATH: ${binPath}`);
+    // Append to LIB environment variable
+    const existingLib = process.env.LIB || '';
+    const newLib = existingLib ? `${existingLib};${libPath}` : libPath;
+    core.exportVariable('LIB', newLib);
+    core.debug(`Set LIB to: ${newLib}`);
+
+    // Set CMake compiler and linker variables
+    core.exportVariable('CC', 'clang-cl.exe');
+    core.exportVariable('CXX', 'clang-cl.exe');
+    core.exportVariable('CMAKE_LINKER', 'lld-link.exe');
+
+    // Set linker flags to include MSVC CRT
+    const crtLib = targetArch === 'x86' ? 'libcmt.lib' : 'libcmt.lib'; // Use libcmtd.lib for debug if needed
+    core.exportVariable('CMAKE_C_LINK_FLAGS', `/LIBPATH:"${libPath}" ${crtLib}`);
+    core.exportVariable('CMAKE_CXX_LINK_FLAGS', `/LIBPATH:"${libPath}" ${crtLib}`);
 
   } catch (error) {
     core.setFailed(`Action failed: ${error.message}`);
   } finally {
     // Clean up temporary batch file
-    if (fs.existsSync('msvc-dev-cmd.bat')) {
-      fs.unlinkSync('msvc-dev-cmd.bat');
+    if (fs.existsSync('clang-cl-dev-cmd.bat')) {
+      fs.unlinkSync('clang-cl-dev-cmd.bat');
     }
   }
 }
