@@ -204,7 +204,7 @@ jobs:
         shell: bash
         run: |
           candle.exe "${{ env.PRODUCT_NAME }}.wxs"
-          light.exe -ext WixUIExtension "{{ env.PRODUCT_NAME }}.wixobj" -o "${{ env.ARTIFACT_NAME }}.msi"
+          light.exe -ext WixUIExtension "${{ env.PRODUCT_NAME }}.wixobj" -o "${{ env.ARTIFACT_NAME }}.msi"
 
       # - name: Upload Exe (Windows)
       #   if: ${{ runner.os == 'Windows' }}

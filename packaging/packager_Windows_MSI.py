@@ -241,9 +241,9 @@ def main():
         'aax_plugin_path': os.getenv('AAX_PATH'),
         'clap_plugin_path': os.getenv('CLAP_PATH'),
         'standalone_plugin_path': os.getenv('Standalone_PATH'),
-        'icon_path': os.getenv('ICON_PATH', '/packaging/icon.ico'),
-        'eula_path': os.getenv('EULA_PATH', '/packaging/EULA'),
-        'readme_path': os.getenv('README_PATH', '/packaging/Readme.rtf')
+        'icon_path': os.getenv('ICON_PATH', 'packaging/icon.ico'),
+        'eula_path': os.getenv('EULA_PATH', 'packaging/EULA'),
+        'readme_path': os.getenv('README_PATH', 'packaging/Readme.rtf')
     }
 
     # Log environment variables for debugging
