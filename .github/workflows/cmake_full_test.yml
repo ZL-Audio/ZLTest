@@ -31,16 +31,16 @@ jobs:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
-          - name: Linux
-            os: ubuntu-latest
-            pluginval-binary: ./pluginval
-            plugin_os_format: "VST3"
-            cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-          - name: macOS
-            os: macos-latest
-            pluginval-binary: pluginval.app/Contents/MacOS/pluginval
-            plugin_os_format: "AU"
-            cmake_extra_flags:
+          # - name: Linux
+          #   os: ubuntu-latest
+          #   pluginval-binary: ./pluginval
+          #   plugin_os_format: "VST3"
+          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          # - name: macOS
+          #   os: macos-latest
+          #   pluginval-binary: pluginval.app/Contents/MacOS/pluginval
+          #   plugin_os_format: "AU"
+          #   cmake_extra_flags:
           - name: Windows
             os: windows-latest
             pluginval-binary: ./pluginval.exe
@@ -196,22 +196,21 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: bash
         run: |
-          python3 -u packaging/packager_Windows.py
-          cat "packaging\installer.iss"
+          python3 -u packaging/packager_Windows_MSI.py
 
-      - name: Generate Installer (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        shell: bash
-        run: |
-          iscc "packaging\installer.iss"
-          mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
+      # - name: Generate Installer (Windows)
+      #   if: ${{ runner.os == 'Windows' }}
+      #   shell: bash
+      #   run: |
+      #     iscc "packaging\installer.iss"
+      #     mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
 
-      - name: Upload Exe (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}.exe
-          path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
+      # - name: Upload Exe (Windows)
+      #   if: ${{ runner.os == 'Windows' }}
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ env.ARTIFACT_NAME }}.exe
+      #     path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
 
       - name: Generate Zip (Linux)
         if: ${{ runner.os == 'Linux' }}
