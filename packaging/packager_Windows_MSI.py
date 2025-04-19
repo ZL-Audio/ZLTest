@@ -110,14 +110,14 @@ class Packager:
                                    Level="1")
         
         # Add plugins
-        self.add_vst3_plugin(program_files_dir, main_feature)
-        self.add_clap_plugin(program_files_dir, main_feature)
-        self.add_aax_plugin(program_files_dir, main_feature)
-        self.add_lv2_plugin(program_files_dir, main_feature)
-        self.add_standalone_app(program_files_dir, main_feature)
+        self.add_vst3_plugin(product, program_files_dir, main_feature)
+        self.add_clap_plugin(product, program_files_dir, main_feature)
+        self.add_aax_plugin(product, program_files_dir, main_feature)
+        self.add_lv2_plugin(product, program_files_dir, main_feature)
+        self.add_standalone_app(product, program_files_dir, main_feature)
         
         # Add readme
-        self.add_readme(program_files_dir, main_feature)
+        self.add_readme(product, program_files_dir, main_feature)
         
         # Add UI references
         ET.SubElement(product, "UIRef", Id="WixUI_InstallDir")
@@ -135,7 +135,7 @@ class Packager:
         
         print(f"WiX configuration file created at {self.wix_config_path}")
 
-    def add_vst3_plugin(self, program_files_dir, feature):
+    def add_vst3_plugin(self, product, program_files_dir, feature):
         """Add VST3 plugin to the installer."""
         if not self.vst3_path:
             return
@@ -146,7 +146,7 @@ class Packager:
             vst3_dir = ET.SubElement(vst3_parent_dir, "Directory", Id="VST3SubDir", Name="VST3")
             
             # VST3 component
-            vst3_comp = ET.SubElement(feature.getroot(), "DirectoryRef", Id="VST3SubDir")
+            vst3_comp = ET.SubElement(product, "DirectoryRef", Id="VST3SubDir")
             vst3_component = ET.SubElement(vst3_comp, "Component", Id="VST3Component", Guid="*")
             
             # VST3 file
@@ -158,7 +158,7 @@ class Packager:
             # Reference component
             ET.SubElement(feature, "ComponentRef", Id="VST3Component")
 
-    def add_clap_plugin(self, program_files_dir, feature):
+    def add_clap_plugin(self, product, program_files_dir, feature):
         """Add CLAP plugin to the installer."""
         if not self.clap_path:
             return
@@ -169,7 +169,7 @@ class Packager:
             clap_dir = ET.SubElement(clap_parent_dir, "Directory", Id="CLAPSubDir", Name="CLAP")
             
             # CLAP component
-            clap_comp = ET.SubElement(feature.getroot(), "DirectoryRef", Id="CLAPSubDir")
+            clap_comp = ET.SubElement(product, "DirectoryRef", Id="CLAPSubDir")
             clap_component = ET.SubElement(clap_comp, "Component", Id="CLAPComponent", Guid="*")
             
             # CLAP file
@@ -181,7 +181,7 @@ class Packager:
             # Reference component
             ET.SubElement(feature, "ComponentRef", Id="CLAPComponent")
 
-    def add_aax_plugin(self, program_files_dir, feature):
+    def add_aax_plugin(self, product, program_files_dir, feature):
         """Add AAX plugin to the installer."""
         if not self.aax_path:
             return
@@ -194,7 +194,7 @@ class Packager:
             aax_dir = ET.SubElement(aax_plugin_dir, "Directory", Id="AAXPlugInsDir", Name="Plug-Ins AAX")
             
             # AAX component
-            aax_comp = ET.SubElement(feature.getroot(), "DirectoryRef", Id="AAXPlugInsDir")
+            aax_comp = ET.SubElement(product, "DirectoryRef", Id="AAXPlugInsDir")
             aax_component = ET.SubElement(aax_comp, "Component", Id="AAXComponent", Guid="*")
             
             # AAX file
@@ -206,7 +206,7 @@ class Packager:
             # Reference component
             ET.SubElement(feature, "ComponentRef", Id="AAXComponent")
 
-    def add_lv2_plugin(self, program_files_dir, feature):
+    def add_lv2_plugin(self, product, program_files_dir, feature):
         """Add LV2 plugin to the installer."""
         if not self.lv2_path:
             return
@@ -217,7 +217,7 @@ class Packager:
             lv2_dir = ET.SubElement(lv2_parent_dir, "Directory", Id="LV2SubDir", Name="LV2")
             
             # LV2 component
-            lv2_comp = ET.SubElement(feature.getroot(), "DirectoryRef", Id="LV2SubDir")
+            lv2_comp = ET.SubElement(product, "DirectoryRef", Id="LV2SubDir")
             lv2_component = ET.SubElement(lv2_comp, "Component", Id="LV2Component", Guid="*")
             
             # LV2 file
@@ -229,7 +229,7 @@ class Packager:
             # Reference component
             ET.SubElement(feature, "ComponentRef", Id="LV2Component")
 
-    def add_standalone_app(self, program_files_dir, feature):
+    def add_standalone_app(self, product, program_files_dir, feature):
         """Add standalone application to the installer."""
         if not self.standalone_path:
             return
@@ -244,7 +244,7 @@ class Packager:
                                        Name=self.project_name)
             
             # Standalone component
-            standalone_comp = ET.SubElement(feature.getroot(), "DirectoryRef", Id="INSTALLDIR")
+            standalone_comp = ET.SubElement(product, "DirectoryRef", Id="INSTALLDIR")
             standalone_component = ET.SubElement(standalone_comp, "Component", Id="StandaloneComponent", Guid="*")
             
             # Standalone file
@@ -254,41 +254,57 @@ class Packager:
                          KeyPath="yes")
             
             # Create shortcuts
-            ET.SubElement(standalone_component, "Shortcut",
+            # Create menu folder for shortcuts
+            menu_dir = ET.SubElement(product.find("./Directory[@Id='TARGETDIR']"), 
+                                    "Directory", Id="ProgramMenuFolder")
+            comp_menu_dir = ET.SubElement(menu_dir, "Directory", 
+                                        Id="ApplicationProgramsFolder", 
+                                        Name=self.project_name)
+            
+            # Shortcut component
+            shortcut_dir_ref = ET.SubElement(product, "DirectoryRef", Id="ApplicationProgramsFolder")
+            shortcut_comp = ET.SubElement(shortcut_dir_ref, "Component", Id="ApplicationShortcut", Guid="*")
+            
+            # Application shortcut
+            ET.SubElement(shortcut_comp, "Shortcut",
                          Id="ApplicationStartMenuShortcut",
                          Name=self.project_name,
                          Description=self.description,
                          Target="[#StandaloneFile]",
                          WorkingDirectory="INSTALLDIR")
             
-            # Reference component
+            # Add component references
             ET.SubElement(feature, "ComponentRef", Id="StandaloneComponent")
+            ET.SubElement(feature, "ComponentRef", Id="ApplicationShortcut")
 
-    def add_readme(self, program_files_dir, feature):
+    def add_readme(self, product, program_files_dir, feature):
         """Add README file to the installer."""
-        if self.check_file_exists(self.readme_path, "README"):
-            # README directory structure
-            docs_dir = ET.SubElement(program_files_dir, "Directory", Id="ProgramMenuFolder")
-            company_dir = ET.SubElement(docs_dir, "Directory", Id="CompanyFolder", Name=self.company_name)
+        if not self.check_file_exists(self.readme_path, "README"):
+            return
             
-            # README component
-            readme_comp = ET.SubElement(feature.getroot(), "DirectoryRef", Id="CompanyFolder")
-            readme_component = ET.SubElement(readme_comp, "Component", Id="ReadmeComponent", Guid="*")
-            
-            # README file
-            ET.SubElement(readme_component, "File", 
-                         Id="ReadmeFile", 
-                         Source=str(self.readme_path), 
-                         KeyPath="yes")
-            
-            # Reference component
-            ET.SubElement(feature, "ComponentRef", Id="ReadmeComponent")
+        # README directory structure
+        docs_dir = ET.SubElement(product.find("./Directory[@Id='TARGETDIR']"), 
+                               "Directory", Id="ProgramMenuFolder")
+        company_dir = ET.SubElement(docs_dir, "Directory", Id="CompanyFolder", Name=self.company_name)
+        
+        # README component
+        readme_comp = ET.SubElement(product, "DirectoryRef", Id="CompanyFolder")
+        readme_component = ET.SubElement(readme_comp, "Component", Id="ReadmeComponent", Guid="*")
+        
+        # README file
+        ET.SubElement(readme_component, "File", 
+                     Id="ReadmeFile", 
+                     Source=str(self.readme_path), 
+                     KeyPath="yes")
+        
+        # Reference component
+        ET.SubElement(feature, "ComponentRef", Id="ReadmeComponent")
 
     def generate_msi_instructions(self):
         """Generate instructions for building the MSI package."""
         print("\nTo build the MSI package, you will need to install WiX Toolset and run:")
         print(f"candle.exe {self.wix_config_path}")
-        print(f"light.exe -ext WixUIExtension {self.project_name}.wixobj -o {self.project_name}-{self.version}.msi")
+        print(f"light.exe -ext WixUIExtension {self.project_name}.wixobj -o {self.output_dir / (self.project_name + '-' + self.version + '.msi')}")
 
 def main():
     """Main function to create the WiX configuration."""
