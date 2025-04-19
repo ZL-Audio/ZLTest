@@ -192,22 +192,19 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}.dmg
           path: "${{ env.ARTIFACT_NAME }}.dmg"
 
-      - name: Generate InnoScript (Windows)
+      - name: Generate MSI Configuration (Windows)
         if: ${{ runner.os == 'Windows' }}
         shell: bash
         run: |
           python3 -u packaging/packager_Windows_MSI.py
-          cat ./dist/ZLPlugin.wxs
-          mv ./dist/ZLPlugin.wxs .
-          candle.exe "ZLPlugin.wxs"
-          light.exe -ext WixUIExtension "ZLPlugin.wixobj" -o "ZLTest-0.0.4.msi"
+          cat "${{ env.PRODUCT_NAME }}.wxs"
 
-      # - name: Generate Installer (Windows)
-      #   if: ${{ runner.os == 'Windows' }}
-      #   shell: bash
-      #   run: |
-      #     iscc "packaging\installer.iss"
-      #     mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
+      - name: Generate Installer (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: bash
+        run: |
+          candle.exe "${{ env.PRODUCT_NAME }}.wxs"
+          light.exe -ext WixUIExtension "{{ env.PRODUCT_NAME }}.wixobj" -o "${{ env.ARTIFACT_NAME }}.msi"
 
       # - name: Upload Exe (Windows)
       #   if: ${{ runner.os == 'Windows' }}

@@ -171,13 +171,13 @@ def create_wix_xml(config):
 def main():
     # Configuration from environment variables
     config = {
-        'plugin_name': os.getenv('PLUGIN_NAME', 'ZLPlugin'),
-        'version': os.getenv('PLUGIN_VERSION', '1.0.0'),
+        'plugin_name': os.getenv('PRODUCT_NAME', 'ZL Plugin'),
+        'version': os.getenv('VERSION', '1.0.0'),
         'company_name': os.getenv('COMPANY_NAME', 'ZL Audio'),
-        'output_dir': os.getenv('OUTPUT_DIR', './dist'),
+        'output_dir': os.getenv('OUTPUT_DIR', ''),
         'vst3_plugin_path': os.getenv('VST3_PATH'),
         'clap_plugin_path': os.getenv('CLAP_PATH'),
-        'standalone_plugin_path': os.getenv('STANDALONE_PATH'),
+        'standalone_plugin_path': os.getenv('Standalone_PATH'),
         'icon_path': os.getenv('ICON_PATH', '/packaging/icon.ico'),
         'eula_path': os.getenv('EULA_PATH', '/packaging/EULA'),
         'readme_path': os.getenv('README_PATH', '/packaging/Readme.rtf')
