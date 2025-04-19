@@ -197,9 +197,20 @@ def create_wix_xml(config):
 
     # EULA for license agreement
     if config.get('eula_path'):
+        ET.SubElement(product, f"{{{wix_ns}}}Binary", {
+            'Id': 'EulaRtf',
+            'SourceFile': config['eula_path']
+        })
         ET.SubElement(product, f"{{{wix_ns}}}WixVariable", {
             'Id': 'WixUILicenseRtf',
-            'Value': config['eula_path']
+            'Value': '[EulaRtf]'
+        })
+
+    # Readme for display during installation
+    if config.get('readme_path'):
+        ET.SubElement(product, f"{{{wix_ns}}}Binary", {
+            'Id': 'ReadmeRtf',
+            'SourceFile': config['readme_path']
         })
 
     # Icon for MSI and Add/Remove Programs
@@ -213,10 +224,100 @@ def create_wix_xml(config):
             'Value': 'ProductIcon'
         })
 
-    # UI
-    ET.SubElement(product, f"{{{wix_ns}}}UIRef", {
-        'Id': 'WixUI_Minimal'  # Use minimal UI to show EULA
+    # Custom UI for EULA and Readme
+    ui = ET.SubElement(root, f"{{{wix_ns}}}UI")
+    ET.SubElement(ui, f"{{{wix_ns}}}UIRef", {
+        'Id': 'WixUI_Minimal'
     })
+
+    # Define custom Readme dialog
+    if config.get('readme_path'):
+        readme_dialog = ET.SubElement(ui, f"{{{wix_ns}}}Dialog", {
+            'Id': 'ReadmeDlg',
+            'Width': '370',
+            'Height': '270',
+            'Title': f"{config['plugin_name']} Readme"
+        })
+        # RTF control for Readme
+        ET.SubElement(readme_dialog, f"{{{wix_ns}}}Control", {
+            'Id': 'ReadmeText',
+            'Type': 'Rtf',
+            'X': '15',
+            'Y': '55',
+            'Width': '340',
+            'Height': '150',
+            'TabSkip': 'no',
+            'Text': '[ReadmeRtf]'
+        })
+        # Title text
+        ET.SubElement(readme_dialog, f"{{{wix_ns}}}Control", {
+            'Id': 'Title',
+            'Type': 'Text',
+            'X': '15',
+            'Y': '15',
+            'Width': '340',
+            'Height': '20',
+            'Transparent': 'yes',
+            'NoPrefix': 'yes',
+            'Text': f"Readme for {config['plugin_name']}"
+        })
+        # Back button
+        ET.SubElement(readme_dialog, f"{{{wix_ns}}}Control", {
+            'Id': 'Back',
+            'Type': 'PushButton',
+            'X': '180',
+            'Y': '243',
+            'Width': '56',
+            'Height': '17',
+            'Text': 'Back'
+        }).append(ET.SubElement(f"{{{wix_ns}}}Publish", {
+            'Event': 'NewDialog',
+            'Value': 'LicenseAgreementDlg'
+        }))
+        # Next button
+        ET.SubElement(readme_dialog, f"{{{wix_ns}}}Control", {
+            'Id': 'Next',
+            'Type': 'PushButton',
+            'X': '236',
+            'Y': '243',
+            'Width': '56',
+            'Height': '17',
+            'Default': 'yes',
+            'Text': 'Next'
+        }).append(ET.SubElement(f"{{{wix_ns}}}Publish", {
+            'Event': 'NewDialog',
+            'Value': 'InstallDirDlg'
+        }))
+        # Cancel button
+        ET.SubElement(readme_dialog, f"{{{wix_ns}}}Control", {
+            'Id': 'Cancel',
+            'Type': 'PushButton',
+            'X': '304',
+            'Y': '243',
+            'Width': '56',
+            'Height': '17',
+            'Cancel': 'yes',
+            'Text': 'Cancel'
+        }).append(ET.SubElement(f"{{{wix_ns}}}Publish", {
+            'Event': 'EndDialog',
+            'Value': 'Return'
+        }))
+
+        # Modify UI sequence to include Readme dialog
+        ET.SubElement(ui, f"{{{wix_ns}}}Publish", {
+            'Dialog': 'LicenseAgreementDlg',
+            'Control': 'Next',
+            'Event': 'NewDialog',
+            'Value': 'ReadmeDlg',
+            'Order': '1'
+        })
+        ET.SubElement(ui, f"{{{wix_ns}}}Publish", {
+            'Dialog': 'ReadmeDlg',
+            'Control': 'Back',
+            'Event': 'NewDialog',
+            'Value': 'LicenseAgreementDlg',
+            'Order': '1'
+        })
 
     # Check if any files were included
     if not included_files:
@@ -241,9 +342,9 @@ def main():
         'aax_plugin_path': os.getenv('AAX_PATH'),
         'clap_plugin_path': os.getenv('CLAP_PATH'),
         'standalone_plugin_path': os.getenv('Standalone_PATH'),
-        'icon_path': os.getenv('ICON_PATH', 'packaging/icon.ico'),
-        'eula_path': os.getenv('EULA_PATH', 'packaging/EULA'),
-        'readme_path': os.getenv('README_PATH', 'packaging/Readme.rtf')
+        'icon_path': os.getenv('ICON_PATH', '/packaging/icon.ico'),
+        'eula_path': os.getenv('EULA_PATH', '/packaging/EULA'),
+        'readme_path': os.getenv('README_PATH', '/packaging/Readme.rtf')
     }
 
     # Log environment variables for debugging
@@ -272,6 +373,9 @@ def main():
         f.write(wix_xml)
 
     print(f"WiX configuration file generated at {output_path}")
+    print("Included files:")
+    for file_path in included_files:
+        print(f"  {file_path}")
 
 if __name__ == "__main__":
     main()
