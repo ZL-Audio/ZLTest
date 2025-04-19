@@ -11,16 +11,16 @@ class Packager:
     def __init__(self):
         self.project_name = os.environ.get('PROJECT_NAME')
         self.version = os.environ.get('VERSION')
-        self.company_name = os.environ.get('COMPANY_NAME')
-        self.company_website = os.environ.get('COMPANY_WEBSITE')
-        self.copyright = os.environ.get('COPYRIGHT')
-        self.description = os.environ.get('DESCRIPTION')
-        self.vst3_path = os.environ.get('VST3_PATH')
-        self.clap_path = os.environ.get('CLAP_PATH')
-        self.aax_path = os.environ.get('AAX_PATH')
-        self.au_path = os.environ.get('AU_PATH')
-        self.lv2_path = os.environ.get('LV2_PATH')
-        self.standalone_path = os.environ.get('STANDALONE_PATH')
+        self.company_name = os.environ.get('COMPANY_NAME', 'Company')  # Default value
+        self.company_website = os.environ.get('COMPANY_WEBSITE', '')  # Default value
+        self.copyright = os.environ.get('COPYRIGHT', '')  # Default value
+        self.description = os.environ.get('DESCRIPTION', '')  # Default value
+        self.vst3_path = os.environ.get('VST3_PATH', '')
+        self.clap_path = os.environ.get('CLAP_PATH', '')
+        self.aax_path = os.environ.get('AAX_PATH', '')
+        self.au_path = os.environ.get('AU_PATH', '')
+        self.lv2_path = os.environ.get('LV2_PATH', '')
+        self.standalone_path = os.environ.get('STANDALONE_PATH', '')
 
         if not self.project_name or not self.version:
             print("Error: PROJECT_NAME and VERSION environment variables must be set.")
@@ -80,7 +80,7 @@ class Packager:
                                InstallerVersion="200",
                                Compressed="yes",
                                InstallScope="perMachine",
-                               Description=self.description,
+                               Description=self.description if self.description else self.project_name,
                                Manufacturer=self.company_name)
         
         # Media
@@ -103,6 +103,10 @@ class Packager:
         directory = ET.SubElement(product, "Directory", Id="TARGETDIR", Name="SourceDir")
         program_files_dir = ET.SubElement(directory, "Directory", Id="ProgramFiles64Folder")
         
+        # Create menu folder for shortcuts
+        menu_dir = ET.SubElement(directory, "Directory", Id="ProgramMenuFolder")
+        app_menu_dir = ET.SubElement(menu_dir, "Directory", Id="ApplicationProgramsFolder", Name=self.project_name)
+        
         # Create feature
         main_feature = ET.SubElement(product, "Feature", 
                                    Id="ProductFeature", 
@@ -114,10 +118,10 @@ class Packager:
         self.add_clap_plugin(product, program_files_dir, main_feature)
         self.add_aax_plugin(product, program_files_dir, main_feature)
         self.add_lv2_plugin(product, program_files_dir, main_feature)
-        self.add_standalone_app(product, program_files_dir, main_feature)
+        self.add_standalone_app(product, program_files_dir, main_feature, app_menu_dir)
         
         # Add readme
-        self.add_readme(product, program_files_dir, main_feature)
+        self.add_readme(product, app_menu_dir, main_feature)
         
         # Add UI references
         ET.SubElement(product, "UIRef", Id="WixUI_InstallDir")
@@ -229,7 +233,7 @@ class Packager:
             # Reference component
             ET.SubElement(feature, "ComponentRef", Id="LV2Component")
 
-    def add_standalone_app(self, product, program_files_dir, feature):
+    def add_standalone_app(self, product, program_files_dir, feature, menu_dir):
         """Add standalone application to the installer."""
         if not self.standalone_path:
             return
@@ -253,49 +257,56 @@ class Packager:
                          Source=self.standalone_path, 
                          KeyPath="yes")
             
-            # Create shortcuts
-            # Create menu folder for shortcuts
-            menu_dir = ET.SubElement(product.find("./Directory[@Id='TARGETDIR']"), 
-                                    "Directory", Id="ProgramMenuFolder")
-            comp_menu_dir = ET.SubElement(menu_dir, "Directory", 
-                                        Id="ApplicationProgramsFolder", 
-                                        Name=self.project_name)
-            
             # Shortcut component
-            shortcut_dir_ref = ET.SubElement(product, "DirectoryRef", Id="ApplicationProgramsFolder")
-            shortcut_comp = ET.SubElement(shortcut_dir_ref, "Component", Id="ApplicationShortcut", Guid="*")
+            shortcut_comp = ET.SubElement(product, "DirectoryRef", Id="ApplicationProgramsFolder")
+            shortcut_component = ET.SubElement(shortcut_comp, "Component", Id="ApplicationShortcut", Guid="*")
             
             # Application shortcut
-            ET.SubElement(shortcut_comp, "Shortcut",
+            ET.SubElement(shortcut_component, "Shortcut",
                          Id="ApplicationStartMenuShortcut",
                          Name=self.project_name,
-                         Description=self.description,
+                         Description=self.description if self.description else self.project_name,
                          Target="[#StandaloneFile]",
                          WorkingDirectory="INSTALLDIR")
+            
+            # Add RemoveFolder element for proper uninstall
+            ET.SubElement(shortcut_component, "RemoveFolder", 
+                         Id="RemoveApplicationProgramsFolder", 
+                         On="uninstall")
+            
+            # Add registry entry to ensure the component has a keypath
+            ET.SubElement(shortcut_component, "RegistryValue",
+                         Root="HKCU",
+                         Key=f"Software\\{self.company_name}\\{self.project_name}",
+                         Name="installed",
+                         Type="integer",
+                         Value="1",
+                         KeyPath="yes")
             
             # Add component references
             ET.SubElement(feature, "ComponentRef", Id="StandaloneComponent")
             ET.SubElement(feature, "ComponentRef", Id="ApplicationShortcut")
 
-    def add_readme(self, product, program_files_dir, feature):
+    def add_readme(self, product, menu_dir, feature):
         """Add README file to the installer."""
         if not self.check_file_exists(self.readme_path, "README"):
             return
             
-        # README directory structure
-        docs_dir = ET.SubElement(product.find("./Directory[@Id='TARGETDIR']"), 
-                               "Directory", Id="ProgramMenuFolder")
-        company_dir = ET.SubElement(docs_dir, "Directory", Id="CompanyFolder", Name=self.company_name)
-        
         # README component
-        readme_comp = ET.SubElement(product, "DirectoryRef", Id="CompanyFolder")
+        readme_comp = ET.SubElement(product, "DirectoryRef", Id="ApplicationProgramsFolder")
         readme_component = ET.SubElement(readme_comp, "Component", Id="ReadmeComponent", Guid="*")
         
         # README file
-        ET.SubElement(readme_component, "File", 
-                     Id="ReadmeFile", 
-                     Source=str(self.readme_path), 
-                     KeyPath="yes")
+        readme_file = ET.SubElement(readme_component, "File", 
+                                   Id="ReadmeFile", 
+                                   Source=str(self.readme_path), 
+                                   KeyPath="yes")
+        
+        # Add shortcut to readme
+        ET.SubElement(readme_component, "Shortcut",
+                     Id="ReadmeShortcut",
+                     Name=f"{self.project_name} Readme",
+                     Target="[#ReadmeFile]")
         
         # Reference component
         ET.SubElement(feature, "ComponentRef", Id="ReadmeComponent")
