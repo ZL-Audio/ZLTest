@@ -44,7 +44,7 @@ jobs:
           - name: Windows
             os: windows-latest
             pluginval-binary: ./pluginval.exe
-            plugin_os_format: "VST3"
+            plugin_os_format: "VST3;LV2;Standalone"
             cmake_extra_flags: -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_LINKER="C:/Program Files/LLVM/bin/lld-link.exe" -DCMAKE_AR="C:/Program Files/LLVM/bin/llvm-lib.exe"
 
     steps:

@@ -86,6 +86,7 @@ def create_wix_xml(config):
     # Plugin files
     plugin_paths = [
         ('vst3_plugin_path', 'VST3 Plugin', 'VST3'),
+        ('lv2_plugin_path', 'LV2 Plugin', 'LV2'),
         ('clap_plugin_path', 'CLAP Plugin', 'CLAP'),
         ('standalone_plugin_path', 'Standalone Plugin', 'Standalone')
     ]
@@ -176,6 +177,7 @@ def main():
         'company_name': os.getenv('COMPANY_NAME', 'ZL Audio'),
         'output_dir': os.getenv('OUTPUT_DIR', ''),
         'vst3_plugin_path': os.getenv('VST3_PATH'),
+        'lv2_plugin_path': os.getenv('LV2_PATH'),
         'clap_plugin_path': os.getenv('CLAP_PATH'),
         'standalone_plugin_path': os.getenv('Standalone_PATH'),
         'icon_path': os.getenv('ICON_PATH', '/packaging/icon.ico'),
@@ -185,14 +187,16 @@ def main():
 
     # Validate paths
     config['vst3_plugin_path'] = check_path_exists(config['vst3_plugin_path'], 'VST3 Plugin') if config['vst3_plugin_path'] else None
+    config['lv2_plugin_path'] = check_path_exists(config['lv2_plugin_path'], 'LV2 Plugin') if config['lv2_plugin_path'] else None
     config['clap_plugin_path'] = check_file_exists(config['clap_plugin_path'], 'CLAP Plugin') if config['clap_plugin_path'] else None
-    config['standalone_plugin_path'] = check_file_exists(config['standalone_plugin_path'], 'Standalone Plugin') if config['standalone_plugin_path'] else None
+    config['standalone_plugin_path'] = check_file_exists(config['standalone_plugin_path'], 'Standalone') if config['standalone_plugin_path'] else None
     config['icon_path'] = check_file_exists(config['icon_path'], 'Icon') if config['icon_path'] else None
     config['eula_path'] = check_file_exists(config['eula_path'], 'EULA') if config['eula_path'] else None
     config['readme_path'] = check_file_exists(config['readme_path'], 'Readme') if config['readme_path'] else None
 
     # Create output directory
-    os.makedirs(config['output_dir'], exist_ok=True)
+    if len(config['output_dir']) > 0:
+        os.makedirs(config['output_dir'], exist_ok=True)
 
     # Generate WiX XML
     wix_xml = create_wix_xml(config)
