@@ -158,6 +158,7 @@ class Packager:
                          Id="VST3File", 
                          Source=str(PureWindowsPath(self.vst3_path)), 
                          KeyPath="yes")
+            print(str(PureWindowsPath(self.vst3_path)))
             
             # Reference component
             ET.SubElement(feature, "ComponentRef", Id="VST3Component")
