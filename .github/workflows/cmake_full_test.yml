@@ -197,6 +197,9 @@ jobs:
         shell: bash
         run: |
           python3 -u packaging/packager_Windows_MSI.py
+          cat packaging/output/ZLTest.wxs
+          candle.exe "packaging/output/ZLTest.wxs"
+          light.exe -ext WixUIExtension "ZLTest.wixobj" -o "packaging/output/ZLTest-0.0.4.msi"
 
       # - name: Generate Installer (Windows)
       #   if: ${{ runner.os == 'Windows' }}
