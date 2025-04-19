@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import shutil
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import uuid
@@ -88,7 +88,7 @@ class Packager:
         
         # Add icon
         if self.check_file_exists(self.icon_path, "Icon"):
-            ET.SubElement(product, "Icon", Id="ProductIcon", SourceFile=str(self.icon_path))
+            ET.SubElement(product, "Icon", Id="ProductIcon", SourceFile=str(PureWindowsPath(self.icon_path)))
             ET.SubElement(product, "Property", Id="ARPPRODUCTICON", Value="ProductIcon")
         
         # Add company website
@@ -97,7 +97,7 @@ class Packager:
         
         # Add EULA
         if self.check_file_exists(self.eula_path, "EULA"):
-            ET.SubElement(product, "WixVariable", Id="WixUILicenseRtf", Value=str(self.eula_path))
+            ET.SubElement(product, "WixVariable", Id="WixUILicenseRtf", Value=str(PureWindowsPath(self.eula_path)))
         
         # Directory structure
         directory = ET.SubElement(product, "Directory", Id="TARGETDIR", Name="SourceDir")
@@ -156,7 +156,7 @@ class Packager:
             # VST3 file
             ET.SubElement(vst3_component, "File", 
                          Id="VST3File", 
-                         Source=self.vst3_path, 
+                         Source=str(PureWindowsPath(self.vst3_path)), 
                          KeyPath="yes")
             
             # Reference component
@@ -179,7 +179,7 @@ class Packager:
             # CLAP file
             ET.SubElement(clap_component, "File", 
                          Id="CLAPFile", 
-                         Source=self.clap_path, 
+                         Source=str(PureWindowsPath(self.clap_path)), 
                          KeyPath="yes")
             
             # Reference component
@@ -204,7 +204,7 @@ class Packager:
             # AAX file
             ET.SubElement(aax_component, "File", 
                          Id="AAXFile", 
-                         Source=self.aax_path, 
+                         Source=str(PureWindowsPath(self.aax_path)), 
                          KeyPath="yes")
             
             # Reference component
@@ -227,7 +227,7 @@ class Packager:
             # LV2 file
             ET.SubElement(lv2_component, "File", 
                          Id="LV2File", 
-                         Source=self.lv2_path, 
+                         Source=str(PureWindowsPath(self.lv2_path)), 
                          KeyPath="yes")
             
             # Reference component
@@ -254,7 +254,7 @@ class Packager:
             # Standalone file
             ET.SubElement(standalone_component, "File", 
                          Id="StandaloneFile", 
-                         Source=self.standalone_path, 
+                         Source=str(PureWindowsPath(self.standalone_path)), 
                          KeyPath="yes")
             
             # Shortcut component
@@ -299,7 +299,7 @@ class Packager:
         # README file
         readme_file = ET.SubElement(readme_component, "File", 
                                    Id="ReadmeFile", 
-                                   Source=str(self.readme_path), 
+                                   Source=str(PureWindowsPath(self.readme_path)), 
                                    KeyPath="yes")
         
         # Add shortcut to readme
