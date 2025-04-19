@@ -175,12 +175,12 @@ def main():
         'version': os.getenv('PLUGIN_VERSION', '1.0.0'),
         'company_name': os.getenv('COMPANY_NAME', 'ZL Audio'),
         'output_dir': os.getenv('OUTPUT_DIR', './dist'),
-        'vst3_plugin_path': os.getenv('VST3_PLUGIN_PATH'),
-        'clap_plugin_path': os.getenv('CLAP_PLUGIN_PATH'),
-        'standalone_plugin_path': os.getenv('STANDALONE_PLUGIN_PATH'),
-        'icon_path': os.getenv('ICON_PATH'),
-        'eula_path': os.getenv('EULA_PATH'),
-        'readme_path': os.getenv('README_PATH')
+        'vst3_plugin_path': os.getenv('VST3_PATH'),
+        'clap_plugin_path': os.getenv('CLAP_PATH'),
+        'standalone_plugin_path': os.getenv('STANDALONE_PATH'),
+        'icon_path': os.getenv('ICON_PATH', '/packaging/icon.ico'),
+        'eula_path': os.getenv('EULA_PATH', '/packaging/EULA'),
+        'readme_path': os.getenv('README_PATH', '/packaging/Readme.rtf')
     }
 
     # Validate paths
