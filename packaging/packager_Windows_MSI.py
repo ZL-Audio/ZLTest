@@ -272,9 +272,6 @@ def main():
         f.write(wix_xml)
 
     print(f"WiX configuration file generated at {output_path}")
-    print("Included files:")
-    for file_path in included_files:
-        print(f"  {file_path}")
 
 if __name__ == "__main__":
     main()
