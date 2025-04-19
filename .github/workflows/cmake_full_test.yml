@@ -200,7 +200,7 @@ jobs:
           cat ./dist/ZLPlugin.wxs
           mv ./dist/ZLPlugin.wxs .
           candle.exe "ZLPlugin.wxs"
-          light.exe -ext WixUIExtension "ZLTest.wixobj" -o "ZLTest-0.0.4.msi"
+          light.exe -ext WixUIExtension "ZLPlugin.wixobj" -o "ZLTest-0.0.4.msi"
 
       # - name: Generate Installer (Windows)
       #   if: ${{ runner.os == 'Windows' }}
