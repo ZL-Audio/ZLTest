@@ -37,7 +37,8 @@ def create_wix_xml(config):
     package = ET.SubElement(product, f"{{{wix_ns}}}Package", {
         'InstallerVersion': '200',
         'Compressed': 'yes',
-        'InstallScope': 'perMachine'
+        'InstallScope': 'perMachine',
+        'Platform': 'x64'  # Explicitly set to 64-bit
     })
 
     # Media
@@ -48,7 +49,8 @@ def create_wix_xml(config):
     # Major Upgrade
     major_upgrade = ET.SubElement(product, f"{{{wix_ns}}}MajorUpgrade", {
         'DowngradeErrorMessage': 'A newer version of [ProductName] is already installed.',
-        'AllowSameVersionUpgrades': 'yes'
+        'Schedule': 'afterInstallInitialize',
+        'AllowDowngrades': 'no'
     })
 
     # Directory structure
@@ -94,7 +96,8 @@ def create_wix_xml(config):
             is_directory = os.path.isdir(path)
             component = ET.SubElement(component_group, f"{{{wix_ns}}}Component", {
                 'Id': f'{plugin_type}Component',
-                'Guid': str(uuid.uuid4())
+                'Guid': str(uuid.uuid4()),
+                'Win64': 'yes'  # Explicitly mark as 64-bit component
             })
             if is_directory:
                 # Handle directories (e.g., VST3)
@@ -130,7 +133,8 @@ def create_wix_xml(config):
         if path:
             component = ET.SubElement(component_group, f"{{{wix_ns}}}Component", {
                 'Id': f'{file_id}Component',
-                'Guid': str(uuid.uuid4())
+                'Guid': str(uuid.uuid4()),
+                'Win64': 'yes'  # Explicitly mark as 64-bit component
             })
             file_elem = ET.SubElement(component, f"{{{wix_ns}}}File", {
                 'Id': file_id,
@@ -171,9 +175,9 @@ def main():
         'version': os.getenv('PLUGIN_VERSION', '1.0.0'),
         'company_name': os.getenv('COMPANY_NAME', 'ZL Audio'),
         'output_dir': os.getenv('OUTPUT_DIR', './dist'),
-        'vst3_plugin_path': os.getenv('VST3_PATH'),
-        'clap_plugin_path': os.getenv('CLAP_PATH'),
-        'standalone_plugin_path': os.getenv('STANDALONE_PATH'),
+        'vst3_plugin_path': os.getenv('VST3_PLUGIN_PATH'),
+        'clap_plugin_path': os.getenv('CLAP_PLUGIN_PATH'),
+        'standalone_plugin_path': os.getenv('STANDALONE_PLUGIN_PATH'),
         'icon_path': os.getenv('ICON_PATH'),
         'eula_path': os.getenv('EULA_PATH'),
         'readme_path': os.getenv('README_PATH')
