@@ -20,6 +20,7 @@ env:
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   SCCACHE_GHA_ENABLED: true
   SCCACHE_CACHE_MULTIARCH: 1
+  IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
 
 # jobs are run in paralell on different machines
 # all steps run in series
@@ -31,49 +32,80 @@ jobs:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
-          # - name: Linux
-          #   os: ubuntu-latest
-          #   pluginval-binary: ./pluginval
-          #   plugin_os_format: "VST3"
-          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-          # - name: macOS
-          #   os: macos-latest
-          #   pluginval-binary: pluginval.app/Contents/MacOS/pluginval
-          #   plugin_os_format: "AU"
-          #   cmake_extra_flags:
+          - name: Linux
+            os: ubuntu-22.04
+            pluginval-binary: ./pluginval
+            plugin_os_format: "VST3"
+            cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
+          - name: macOS
+            os: macos-15
+            pluginval-binary: pluginval.app/Contents/MacOS/pluginval
+            plugin_os_format: "AU"
+            cmake_extra_flags:
           - name: Windows
             os: windows-latest
+            vcvars64_path: '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"'
             pluginval-binary: ./pluginval.exe
-            plugin_os_format: "VST3;LV2;Standalone"
-            cmake_extra_flags: -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_LINKER="C:/Program Files/LLVM/bin/lld-link.exe" -DCMAKE_AR="C:/Program Files/LLVM/bin/llvm-lib.exe"
+            plugin_os_format: "VST3"
+            cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
+      - name: Set up Clang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh 17
 
       # This also starts up our "fake" display Xvfb, needed for pluginval
-      - name: Install JUCE's Linux Deps (Linux)
+      - name: Install Deps (Linux)
         if: runner.os == 'Linux'
         # Thanks to McMartin & co https://forum.juce.com/t/list-of-juce-dependencies-under-linux/15121/44
         run: |
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype-dev libfontconfig1-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev xvfb ninja-build
           sudo /usr/bin/Xvfb $DISPLAY &
 
+      - name: Cache IPP (Windows)
+        if: runner.os == 'Windows'
+        id: cache-ipp
+        uses: actions/cache@v4
+        with:
+          key: ipp-v6
+          path: C:\Program Files (x86)\Intel
+
+      - name: Install IPP (Windows)
+        if: (runner.os == 'Windows') && (steps.cache-ipp.outputs.cache-hit != 'true')
+        shell: bash
+        run: |
+          curl --output oneapi.exe https://registrationcenter-download.intel.com/akdlm/IRC_NAS/2e89fab4-e1c7-4f14-a1ef-6cddba8c5fa7/intel-ipp-2022.0.0.796_offline.exe
+          ./oneapi.exe -s -x -f oneapi
+          ./oneapi/bootstrapper.exe -s -c --action install --components=intel.oneapi.win.ipp.devel --eula=accept -p=NEED_VS2022_INTEGRATION=1 --log-dir=.
+
+      - name: Save IPP cache (Windows)
+        if: runner.os == 'Windows' && (steps.cache-ipp.outputs.cache-hit != 'true')
+        uses: actions/cache/save@v4
+        with:
+          path: C:\Program Files (x86)\Intel
+          key: ipp-v6
+
       - name: Install Ninja (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: choco install ninja --no-progress -y
+        run: choco install ninja
 
-      - name: Install macOS Deps (macOS)
+      - name: Install Deps (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: brew install ninja osxutils
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
       - name: Import Certificates (macOS)
-        uses: apple-actions/import-codesign-certs@v3 # only exists as a tag right now
-        if: (runner.os == 'macOS') && (env.p12-file-base64 != '')
+        uses: apple-actions/import-codesign-certs@v5 # only exists as a tag right now
+        if: ${{ (runner.os == 'macOS') && (env.p12-file-base64 != '')}}
         with:
           p12-file-base64: ${{ secrets.DEV_ID_APP_CERT }}
           p12-password: ${{ secrets.DEV_ID_APP_PASSWORD }}
@@ -86,16 +118,22 @@ jobs:
         run: |
           cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }} .
           cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
+        env:
+          PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
 
       - name: Configure and Build (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          call ${{ matrix.vcvars64_path }}
           cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }} .
           cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
         env:
           PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
+
+      - name: Test
+        working-directory: ${{ env.BUILD_DIR }}
+        run: ctest --output-on-failure -j4 -VV
 
       - name: Read in .env from CMake # see GitHubENV.cmake
         shell: bash
@@ -192,26 +230,26 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}.dmg
           path: "${{ env.ARTIFACT_NAME }}.dmg"
 
-      - name: Generate MSI Configuration (Windows)
+      - name: Generate InnoScript (Windows)
         if: ${{ runner.os == 'Windows' }}
         shell: bash
         run: |
-          python3 -u packaging/packager_Windows_MSI.py
-          cat "${{ env.PRODUCT_NAME }}.wxs"
+          python3 -u packaging/packager_Windows.py
+          cat "packaging\installer.iss"
 
       - name: Generate Installer (Windows)
         if: ${{ runner.os == 'Windows' }}
         shell: bash
         run: |
-          candle.exe "${{ env.PRODUCT_NAME }}.wxs"
-          light.exe -ext WixUIExtension "${{ env.PRODUCT_NAME }}.wixobj" -o "${{ env.ARTIFACT_NAME }}.msi"
+          iscc "packaging\installer.iss"
+          mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
 
       - name: Upload Exe (Windows)
         if: ${{ runner.os == 'Windows' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
-          path: "${{ env.ARTIFACT_NAME }}.msi"
+          name: ${{ env.ARTIFACT_NAME }}.exe
+          path: "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
 
       - name: Generate Zip (Linux)
         if: ${{ runner.os == 'Linux' }}
