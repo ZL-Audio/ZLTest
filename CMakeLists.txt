@@ -176,12 +176,22 @@ target_link_libraries(SharedCode
         juce::juce_recommended_warning_flags)
 
 # add kfr
+
+# retrieve a copy of the current directory's `COMPILE_OPTIONS`
+get_directory_property(old_dir_compile_options COMPILE_OPTIONS)
+
+# modify the actual value of the current directory's `COMPILE_OPTIONS` (copy from above line remains unchanged). subdirectories inherit a copy of their parent's `COMPILE_OPTIONS` at the time the subdirectory is processed.
+add_compile_options(-w)
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(KFR_ENABLE_MULTIARCH ON)
 
 add_subdirectory(kfr)
 
 target_link_libraries(SharedCode INTERFACE kfr kfr_dft)
+
+# restore the current directory's old `COMPILE_OPTIONS`
+set_directory_properties(PROPERTIES COMPILE_OPTIONS "${old_dir_compile_options}")
 
 # Link the JUCE plugin targets our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
