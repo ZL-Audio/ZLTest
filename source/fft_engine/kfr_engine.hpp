@@ -1,10 +1,10 @@
 #pragma once
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wall"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
 #include <kfr/kfr.h>
 #include <kfr/dft.hpp>
-#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
 
 namespace zlFFTEngine {
     template<typename FloatType>
