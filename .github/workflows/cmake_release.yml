@@ -26,31 +26,31 @@ jobs:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
-          - name: Linux-x86
-            os: ubuntu-22.04
-            plugin_os_format: "VST3;LV2;Standalone"
-            app_suffix: ""
-            cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
-          - name: Linux-ARM
-            os: ubuntu-22.04-arm
-            plugin_os_format: "VST3;LV2;Standalone"
-            app_suffix: ""
-            cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
+          # - name: Linux-x86
+          #   os: ubuntu-22.04
+          #   plugin_os_format: "VST3;LV2;Standalone"
+          #   app_suffix: ""
+          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
+          # - name: Linux-ARM
+          #   os: ubuntu-22.04-arm
+          #   plugin_os_format: "VST3;LV2;Standalone"
+          #   app_suffix: ""
+          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
           - name: macOS
             os: macos-15
             plugin_os_format: "VST3;AU;Standalone"
             app_suffix: ".app"
-            cmake_extra_flags: -DCMAKE_OSX_ARCHITECTURES="arm64"
-          - name: Windows-x86
-            os: windows-latest
-            plugin_os_format: "VST3;LV2;Standalone"
-            app_suffix: ".exe"
-            cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
-          - name: Windows-ARM
-            os: windows-11-arm
-            plugin_os_format: "VST3;LV2;Standalone"
-            app_suffix: ".exe"
-            cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
+            cmake_extra_flags:
+          # - name: Windows-x86
+          #   os: windows-latest
+          #   plugin_os_format: "VST3;LV2;Standalone"
+          #   app_suffix: ".exe"
+          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
+          # - name: Windows-ARM
+          #   os: windows-11-arm
+          #   plugin_os_format: "VST3;LV2;Standalone"
+          #   app_suffix: ".exe"
+          #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
 
     steps:
       - name: Set up Clang (Linux)
@@ -94,12 +94,23 @@ jobs:
         env:
           p12-file-base64: ${{ secrets.DEV_ID_APP_CERT }}
 
-      - name: Configure and Build (Linux & macOS)
-        if: runner.os != 'Windows'
+      - name: Configure and Build (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} ${{ matrix.cmake_extra_flags }} .
           cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
+        env:
+          PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
+
+      - name: Configure and Build (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cmake -B ${{ env.BUILD_DIR }}_arm -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="arm64" .
+          cmake --build ${{ env.BUILD_DIR }}_arm --config ${{ env.BUILD_TYPE }}
+          cmake -B ${{ env.BUILD_DIR }}_x86 -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="x86_64" .
+          cmake --build ${{ env.BUILD_DIR }}_x86 --config ${{ env.BUILD_TYPE }}
         env:
           PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
 
