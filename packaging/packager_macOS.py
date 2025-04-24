@@ -16,15 +16,13 @@ def main():
     build_dir = os.getenv("BUILD_DIR", "")
     artifact_name = os.getenv("ARTIFACT_NAME", "")
     developer_id_app = os.getenv("DEVELOPER_ID_APPLICATION", "")
+    macos_arch = os.getenv("MACOS_ARCH", "x86_64,arm64")
 
     # root
     root = ET.Element("installer-gui-script", minSpecVersion="1")
     # title
     title = ET.SubElement(root, "title")
     title.text = "{} {}".format(product_name, version)
-    # min os version
-    allowed_os_version = ET.SubElement(root, "allowed-os-versions")
-    ET.SubElement(allowed_os_version, "os-version", min="10.13")
     # EULA
     if os.path.isfile("packaging/EULA"):
         eula = ET.SubElement(root, "license", file="EULA")
@@ -36,7 +34,7 @@ def main():
     options = ET.SubElement(root, "options",
                             customize="always",
                             rootVolumeOnly="true",
-                            hostArchitectures="x86_64,arm64")
+                            hostArchitectures=macos_arch)
     # domain
     domain = ET.SubElement(root, "domain",
                            enable_anywhere="false",
@@ -68,7 +66,7 @@ def main():
                             developer_id_app, plugin_path), shell=True)
 
                 identifier = "{}.{}.{}.pkg".format(bundle_id, project_name, extension)
-                pkg_path = "{}/{}.{}.pkg".format(build_dir, product_name, extension)
+                pkg_path = "{}/{}.{}.pkg".format(build_dir, product_name, extension).replace(" ", "_")
 
                 subprocess.run(
                     'pkgbuild --identifier "{}" --version {} --component "{}" --install-location "{}" "{}"'.format(
