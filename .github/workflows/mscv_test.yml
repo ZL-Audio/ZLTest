@@ -63,6 +63,12 @@ jobs:
           #   cmake_extra_flags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
       - name: Set up Clang (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -78,13 +84,6 @@ jobs:
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype-dev libfontconfig1-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev xvfb ninja-build
           sudo /usr/bin/Xvfb $DISPLAY &
 
-      - name: Install Ninja (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          choco install ninja
-          choco upgrade llvm --version 18.1.8
-
       - name: Setup MSVC (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -93,12 +92,6 @@ jobs:
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
         run: brew install ninja osxutils
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
 
       - name: Import Certificates (macOS)
         uses: apple-actions/import-codesign-certs@v5 # only exists as a tag right now
