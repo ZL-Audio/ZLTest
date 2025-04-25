@@ -10,20 +10,15 @@ def main():
     standalone_path = os.getenv("Standalone_PATH", "")
 
     if platform.system() == 'Linux':
-        for dp, dn, filenames in os.walk(standalone_path):
-            for f in filenames:
-                if os.path.splitext(f)[1] == '.so':
-                    try:
-                        result = subprocess.run(['ldd', os.path.join(dp, f)], capture_output=True, text=True)
-                        print(result)
-                        print(result.stdout)
-                        print(result.stderr)
-                    except Exception as e:
-                        print("Error:", e)
+        linux_path = os.path.join(standalone_path, product_name)
+        result = subprocess.run(['ldd', linux_path], capture_output=True, text=True)
+        print(result)
+        print(result.stdout)
+        print(result.stderr)
     elif platform.system() == 'Windows':
         path2022 = 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat'
         path2025 = 'C:/Program Files/Microsoft Visual Studio/2025/Enterprise/VC/Auxiliary/Build/vcvars64.bat'
-        for msvc_path in [path2022, path2025]:
+        for msvc_path in [os.path.abspath(path2022), os.path.abspath(path2025)]:
             if (os.path.exists(msvc_path)):
                 subprocess.run(['call', msvc_path])
                 print(msvc_path)
