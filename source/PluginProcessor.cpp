@@ -85,13 +85,13 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     in_buffer.resize(fft_size);
     std::ranges::fill(in_buffer, 1.f);
     dummy_spectrum.resize(fft_size);
-    std::ranges::fill(dummy_spectrum, std::complex<float>(.9f, 0.f));
+    std::ranges::fill(dummy_spectrum, std::complex<float>(1.f, 0.f));
     out_buffer.resize(fft_size);
 
     kfr_engine.setOrder(fft_order);
     juce_engine.setOrder(fft_order);
 
-    const size_t channel_num = getMainBusNumInputChannels();
+    const size_t channel_num = static_cast<size_t>(getMainBusNumInputChannels());
     inputFIFOs.resize(channel_num);
     outputFIFOs.resize(channel_num);
 
