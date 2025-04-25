@@ -31,7 +31,7 @@ def main():
                         key, value = line.split('=', 1)
                         os.environ[key] = value
 
-        result = subprocess.run(['DUMPBIN', '/headers', standalone_path], capture_output=True, text=True)
+        result = subprocess.run(['dumpbin', '/dependents', standalone_path], capture_output=True, text=True)
         print(result.stdout)
         print(result.stderr)
     elif platform.system() == 'Darwin':
