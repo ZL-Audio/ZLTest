@@ -20,6 +20,7 @@ def main():
                 for line in result.stdout.splitlines():
                     if '=' in line:
                         print(line)
+                        line += '\n'
                         f.write(line.encode())
             return
 
