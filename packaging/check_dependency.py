@@ -11,7 +11,7 @@ def main():
 
     if platform.system() == 'Linux':
         linux_path = os.path.join(standalone_path, product_name)
-        result = subprocess.run(['ldd', linux_path], capture_output=True, text=True)
+        result = subprocess.run(['ldd', standalone_path], capture_output=True, text=True)
         print(result)
         print(result.stdout)
         print(result.stderr)
@@ -20,8 +20,8 @@ def main():
         path2025 = 'C:/Program Files/Microsoft Visual Studio/2025/Enterprise/VC/Auxiliary/Build/vcvars64.bat'
         for msvc_path in [os.path.abspath(path2022), os.path.abspath(path2025)]:
             if (os.path.exists(msvc_path)):
-                subprocess.run(['call', msvc_path])
                 print(msvc_path)
+                subprocess.run(['call "{}"'.format(msvc_path)])
                 break
         result = subprocess.run(['DUMPBIN', '/headers', standalone_path], capture_output=True, text=True)
         print(result)
