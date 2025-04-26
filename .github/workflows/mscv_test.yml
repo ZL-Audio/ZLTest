@@ -1,4 +1,4 @@
-name: Release
+name: MSVC Test
 
 on:
   workflow_dispatch:
@@ -83,6 +83,13 @@ jobs:
         run: |
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype-dev libfontconfig1-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev xvfb ninja-build
           sudo /usr/bin/Xvfb $DISPLAY &
+
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install ninja
+          choco install innosetup
 
       - name: Setup MSVC (Windows)
         if: runner.os == 'Windows'
