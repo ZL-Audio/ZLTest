@@ -3,11 +3,21 @@ import sys
 import platform
 import subprocess
 
+def get_bat_name():
+    arch = platform.machine().lower()
+    if arch in ('x86_64', 'amd64'):
+        return 'vcvars64.bat'
+    elif arch in ('arm64', 'aarch64'):
+        return 'vcvarsarm64.bat'
+    else:
+        return ''
+
 
 def main():
     github_env = os.getenv("GITHUB_ENV", "")
-    for year in range(2050, 2000, -1):
-        msvc_path = 'C:/Program Files/Microsoft Visual Studio/{}/Enterprise/VC/Auxiliary/Build/vcvars64.bat'.format(year)
+    bat_name = get_bat_name()
+    for year in range(2022, 2099):
+        msvc_path = 'C:/Program Files/Microsoft Visual Studio/{}/Enterprise/VC/Auxiliary/Build/{}'.format(year, bat_name)
         msvc_path = os.path.abspath(msvc_path)
         if os.path.exists(msvc_path):
             print(f"Found MSVC at: {msvc_path}")
@@ -19,7 +29,6 @@ def main():
             with open(github_env, 'wb') as f:
                 for line in result.stdout.splitlines():
                     if '=' in line:
-                        print(line)
                         line += '\n'
                         f.write(line.encode())
             return
