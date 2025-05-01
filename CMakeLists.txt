@@ -35,31 +35,17 @@ set(LV2URI "https://github.com/ZL-Audio/${PROJECT_NAME}")
 # For simplicity, the name of the CMake project is also the name of the target
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 
-# Change me! Set the plugin formats you want built
-# Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    if (DEFINED ENV{PLUGIN_OS_FORMAT})
-        set(FORMATS "$ENV{PLUGIN_OS_FORMAT}")
-    else ()
-        set(FORMATS AU VST3 AAX)
-    endif()
-    if (DEFINED ENV{GITHUB_TOKEN})
-        set(JUCE_AAX_COPY_DIR "/Users/runner/Library/Audio/Plug-Ins/AAX")
-    else ()
-        set(JUCE_AAX_COPY_DIR "/Library/Application Support/Avid/Audio/Plug-Ins")
-    endif ()
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    if (DEFINED ENV{PLUGIN_OS_FORMAT})
-        set(FORMATS "$ENV{PLUGIN_OS_FORMAT}")
-    else ()
-        set(FORMATS LV2 VST3 AAX)
-    endif()
-    set(JUCE_AAX_COPY_DIR "C:/Program Files/Common Files/Avid/Audio/Plug-Ins")
+if (NOT DEFINED ZL_JUCE_COPY_PLUGIN)
+    set (ZL_JUCE_COPY_PLUGIN TRUE)
+endif ()
+
+if (DEFINED ZL_JUCE_FORMATS)
+    set(FORMATS "${ZL_JUCE_FORMATS}")
 else ()
-    if (DEFINED ENV{PLUGIN_OS_FORMAT})
-        set(FORMATS "$ENV{PLUGIN_OS_FORMAT}")
-    else()
-        set(FORMATS LV2 VST3)
+    if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(FORMATS VST3 AU Standalone)
+    else ()
+        set(FORMATS VST3 LV2 Standalone)
     endif ()
 endif ()
 
@@ -89,8 +75,7 @@ juce_add_plugin("${PROJECT_NAME}"
         COMPANY_NAME "${COMPANY_NAME}"
         BUNDLE_ID "${BUNDLE_ID}"
 
-        # On MacOS, plugin is copied to ~/Users/yourname/Library/Audio/Plug-Ins/
-        COPY_PLUGIN_AFTER_BUILD TRUE
+        COPY_PLUGIN_AFTER_BUILD ${ZL_JUCE_COPY_PLUGIN}
         AAX_COPY_DIR "${JUCE_AAX_COPY_DIR}"
 
         # Change me!
