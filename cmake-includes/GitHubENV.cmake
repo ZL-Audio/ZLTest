@@ -1,6 +1,6 @@
 # Write some temp files to make GitHub Actions / packaging easy
 
-if ((DEFINED ENV{CI}))
+if (DEFINED ENV{CI})
     set (env_file "${PROJECT_SOURCE_DIR}/.env")
     message ("Writing ENV file for CI: ${env_file}")
 
@@ -11,7 +11,7 @@ if ((DEFINED ENV{CI}))
     file(APPEND "${env_file}" "BUNDLE_ID=${BUNDLE_ID}\n")
     file(APPEND "${env_file}" "COMPANY_NAME=${COMPANY_NAME}\n")
 
-    set (ARTIFACTS_PATH "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_artefacts/${CMAKE_BUILD_TYPE})
+    set (ARTIFACTS_PATH "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_artefacts/${CMAKE_BUILD_TYPE}")
 
     file(APPEND "${env_file}" "ARTIFACTS_PATH=${ARTIFACTS_PATH}\n")
     if ("VST3" IN_LIST FORMATS)
