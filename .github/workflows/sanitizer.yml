@@ -55,10 +55,12 @@ jobs:
           #   pluginval_cmake_extra_flags: -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
 
     steps:
-      - name: Install Ninja (Windows)
+      - name: Install Deps (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: choco install ninja
+        run: |
+          choco install ninja --no-progress -y
+          choco upgrade llvm --version 19.1.7 --no-progress -y
 
       - name: Install macOS Deps (macOS)
         if: ${{ runner.os == 'macOS' }}
