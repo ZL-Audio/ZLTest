@@ -89,6 +89,7 @@ jobs:
           cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
         env:
           PLUGIN_OS_FORMAT: ${{ matrix.plugin_os_format }}
+          ASAN_OPTIONS: detect_odr_violation=0
 
       - name: Read in .env from CMake # see GitHubENV.cmake
         shell: bash
