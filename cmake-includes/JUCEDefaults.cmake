@@ -8,7 +8,7 @@ option(JUCE_ENABLE_MODULE_SOURCE_GROUPS "Show all module sources in IDE projects
 
 # Static runtime please
 # See https://github.com/sudara/pamplejuce/issues/111
-if (WIN32)
+if (WIN32 AND NOT WITH_ADDRESS_SANITIZER)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE INTERNAL "")
 endif ()
 
