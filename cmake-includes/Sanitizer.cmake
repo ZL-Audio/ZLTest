@@ -6,6 +6,7 @@ if (WITH_ADDRESS_SANITIZER)
     message("${CMAKE_CXX_COMPILER_ID}")
     if (MSVC)
         add_compile_options(/fsanitize=address)
+        # link_libraries(clang_rt.asan-x86_64)
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         # also enable UndefinedBehaviorSanitizer
         # https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html

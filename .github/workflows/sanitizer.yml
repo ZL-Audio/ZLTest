@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUILD_TYPE: Debug
+  BUILD_TYPE: Release
   BUILD_DIR: Builds
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   HOMEBREW_NO_INSTALL_CLEANUP: 1
