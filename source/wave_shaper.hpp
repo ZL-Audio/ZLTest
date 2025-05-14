@@ -13,34 +13,37 @@ public:
         return g0(x);
     }
 
-    FloatType processADAA(FloatType x) {
-        FloatType d;
+    FloatType processADAA(FloatType x2) {
         FloatType y{};
-        if (std::abs(x - x1) < kEps) {
-            d = g1(FloatType(0.5) * (x + x1));
-        } else {
-            d = (g2(x) - g2(x1)) / (x - x1);
-        }
-        if (std::abs(x - x0) < kEps) {
-            const auto x_bar = FloatType(0.5) * (x + x0);
-            const auto delta = x_bar - x1;
-            if (std::abs(delta) < kEps) {
-                y = g0(FloatType(0.5) * (x_bar + x1));
-            } else {
-                y = FloatType(2) / delta * (g1(x_bar) + (g2(x1) - g2(x_bar)) / delta);
+        const auto g2_x2 = g2(x2);
+        const auto x2_x1_delta = x2 - x1_;
+        FloatType d1 = std::abs(x2_x1_delta) > kEps
+                           ? (g2_x2 - g2_x1_) / (x2_x1_delta) // x2 - x1 normal condition
+                           : g1(FloatType(0.5) * (x2 + x1_)); // x2 - x1 ill condition
+        const auto x2_x0_delta = x2 - x0_;
+        if (std::abs(x2_x0_delta) > kEps) { // x2 - x0 normal condition
+            y = FloatType(2) / (x2_x0_delta) * (d1 - d0_);
+        } else { // x2 - x0 ill condition
+            const auto x_bar = FloatType(0.5) * (x2 + x0_);
+            const auto delta = x_bar - x1_;
+            if (std::abs(delta) > kEps) { // delta normal condition
+                const auto delta_r = FloatType(1) / delta;
+                y = FloatType(2) * delta_r * (g1(x_bar) + (g2_x1_ - g2(x_bar)) * delta_r);
+            } else { // delta ill condition
+                y = g0(FloatType(0.5) * (x_bar + x1_));
             }
-        } else {
-            y = FloatType(2) / (x - x0) * (d - d0);
         }
-        x0 = x1;
-        x1 = x;
-        d0 = d;
+        // save states
+        x0_ = x1_;
+        x1_ = x2;
+        d0_ = d1;
+        g2_x1_ = g2_x2;
         return y;
     }
 
 private:
-    FloatType x0, x1, d0;
-    static constexpr FloatType kEps = FloatType(1e-10);
+    FloatType x0_{}, x1_{}, d0_{}, g2_x1_{};
+    static constexpr FloatType kEps = FloatType(1e-15);
 
     inline FloatType g0(FloatType x) {
         return x > 0
