@@ -82,6 +82,7 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused(sampleRate, samplesPerBlock);
+    wave_shaper_.resize(2);
 }
 
 void PluginProcessor::releaseResources() {
@@ -114,18 +115,8 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                    juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
 
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
+    juce::ScopedNoDenormals no_denormals;
+    auto totalNumInputChannels = std::min(getTotalNumInputChannels(), 2);
 
     const auto new_adda_flag = adaa_flag_.load() > 0.5f;
     if (new_adda_flag != current_adaa_flag_) {
@@ -135,18 +126,20 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     if (!current_adaa_flag_) {
         for (int channel = 0; channel < totalNumInputChannels; ++channel) {
             auto *channel_data = buffer.getWritePointer(channel);
+            auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
             for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
                 auto x = static_cast<double>(channel_data[i]);
-                x = wave_shaper_.processNormal(x);
+                x = wave_shaper.processNormal(x);
                 channel_data[i] = static_cast<float>(x);
             }
         }
     } else {
         for (int channel = 0; channel < totalNumInputChannels; ++channel) {
             auto *channel_data = buffer.getWritePointer(channel);
+            auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
             for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
                 auto x = static_cast<double>(channel_data[i]);
-                x = wave_shaper_.processADAA(x);
+                x = wave_shaper.processADAA(x);
                 channel_data[i] = static_cast<float>(x);
             }
         }

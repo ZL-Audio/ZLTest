@@ -55,7 +55,7 @@ public:
 private:
     std::atomic<float> &adaa_flag_;
     bool current_adaa_flag_{false};
-    WaveShaper<double> wave_shaper_;
+    std::vector<WaveShaper<double>> wave_shaper_;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
     void handleAsyncUpdate() override;
