@@ -6,7 +6,9 @@
 #include "ipps.h"
 #endif
 
-class PluginProcessor : public juce::AudioProcessor {
+#include "wave_shaper.hpp"
+
+class PluginProcessor : public juce::AudioProcessor, private juce::AsyncUpdater {
 public:
     juce::AudioProcessorValueTreeState parameters;
 
@@ -51,5 +53,10 @@ public:
     void setStateInformation(const void *data, int sizeInBytes) override;
 
 private:
+    std::atomic<float> &adaa_flag_;
+    bool current_adaa_flag_{false};
+    WaveShaper<double> wave_shaper_;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
+
+    void handleAsyncUpdate() override;
 };

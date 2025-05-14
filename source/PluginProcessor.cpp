@@ -12,10 +12,11 @@ PluginProcessor::PluginProcessor()
 #endif
       ), parameters(*this, nullptr, juce::Identifier("APVTSTutorial"),
                     {
-                        std::make_unique<juce::AudioParameterBool>("kfr_engine", // parameterID
-                                                                   "KFR Engine", // parameter name
-                                                                   true) // default value
-                    }) {
+                        std::make_unique<juce::AudioParameterBool>("adaa", // parameterID
+                                                                   "ADAA", // parameter name
+                                                                   false) // default value
+                    }),
+      adaa_flag_(*parameters.getRawParameterValue("adaa")) {
 }
 
 PluginProcessor::~PluginProcessor() {
@@ -81,7 +82,6 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused(sampleRate, samplesPerBlock);
-
 }
 
 void PluginProcessor::releaseResources() {
@@ -127,16 +127,29 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-        auto *channelData = buffer.getWritePointer(channel);
-        juce::ignoreUnused(channelData);
-        // ..do something to the data...
+    const auto new_adda_flag = adaa_flag_.load() > 0.5f;
+    if (new_adda_flag != current_adaa_flag_) {
+        current_adaa_flag_ = new_adda_flag;
+        triggerAsyncUpdate();
+    }
+    if (!current_adaa_flag_) {
+        for (int channel = 0; channel < totalNumInputChannels; ++channel) {
+            auto *channel_data = buffer.getWritePointer(channel);
+            for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
+                auto x = static_cast<double>(channel_data[i]);
+                x = wave_shaper_.processNormal(x);
+                channel_data[i] = static_cast<float>(x);
+            }
+        }
+    } else {
+        for (int channel = 0; channel < totalNumInputChannels; ++channel) {
+            auto *channel_data = buffer.getWritePointer(channel);
+            for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
+                auto x = static_cast<double>(channel_data[i]);
+                x = wave_shaper_.processADAA(x);
+                channel_data[i] = static_cast<float>(x);
+            }
+        }
     }
 }
 
@@ -164,6 +177,13 @@ void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
     juce::ignoreUnused(data, sizeInBytes);
 }
 
+void PluginProcessor::handleAsyncUpdate() {
+    if (adaa_flag_.load() < .5f) {
+        setLatencySamples(0);
+    } else {
+        setLatencySamples(1);
+    }
+}
 
 //==============================================================================
 // This creates new instances of the plugin..
