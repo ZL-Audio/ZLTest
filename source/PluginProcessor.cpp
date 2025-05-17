@@ -82,7 +82,8 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused(sampleRate, samplesPerBlock);
-    wave_shaper_.resize(2);
+    wave_shaper_[0].prepareBuffer();
+    wave_shaper_[1].prepareBuffer();
 }
 
 void PluginProcessor::releaseResources() {
@@ -129,8 +130,11 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
             auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
             for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
                 auto x = static_cast<double>(channel_data[i]);
-                x = wave_shaper.processNormal(x);
-                channel_data[i] = static_cast<float>(x);
+                const auto f = x > 0.f;
+                x = juce::Decibels::gainToDecibels(std::abs(x));
+                x = wave_shaper.template eval<false>(x);
+                x = juce::Decibels::decibelsToGain(x);
+                channel_data[i] = f ? static_cast<float>(x) : -static_cast<float>(x);
             }
         }
     } else {
@@ -139,8 +143,11 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
             auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
             for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
                 auto x = static_cast<double>(channel_data[i]);
-                x = wave_shaper.processADAA(x);
-                channel_data[i] = static_cast<float>(x);
+                const auto f = x > 0.f;
+                x = juce::Decibels::gainToDecibels(std::abs(x));
+                x = wave_shaper.template eval<true>(x);
+                x = juce::Decibels::decibelsToGain(x);
+                channel_data[i] = f ? static_cast<float>(x) : -static_cast<float>(x);
             }
         }
     }

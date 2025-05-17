@@ -6,7 +6,7 @@
 #include "ipps.h"
 #endif
 
-#include "wave_shaper.hpp"
+#include "knee_computer.hpp"
 
 class PluginProcessor : public juce::AudioProcessor, private juce::AsyncUpdater {
 public:
@@ -55,7 +55,7 @@ public:
 private:
     std::atomic<float> &adaa_flag_;
     bool current_adaa_flag_{false};
-    std::vector<WaveShaper<double>> wave_shaper_;
+    std::array<zldsp::compressor::KneeComputer<double>, 2> wave_shaper_;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
     void handleAsyncUpdate() override;
