@@ -124,31 +124,19 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         current_adaa_flag_ = new_adda_flag;
         triggerAsyncUpdate();
     }
-    if (!current_adaa_flag_) {
-        for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-            auto *channel_data = buffer.getWritePointer(channel);
-            auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
-            for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
-                auto x = static_cast<double>(channel_data[i]);
-                const auto f = x > 0.f;
-                x = juce::Decibels::gainToDecibels(std::abs(x));
-                x = wave_shaper.template eval<false>(x);
-                x = juce::Decibels::decibelsToGain(x);
-                channel_data[i] = f ? static_cast<float>(x) : -static_cast<float>(x);
-            }
-        }
-    } else {
-        for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-            auto *channel_data = buffer.getWritePointer(channel);
-            auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
-            for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
-                auto x = static_cast<double>(channel_data[i]);
-                const auto f = x > 0.f;
-                x = juce::Decibels::gainToDecibels(std::abs(x));
-                x = wave_shaper.template eval<true>(x);
-                x = juce::Decibels::decibelsToGain(x);
-                channel_data[i] = f ? static_cast<float>(x) : -static_cast<float>(x);
-            }
+    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
+        auto *channel_data = buffer.getWritePointer(channel);
+        auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
+        auto &rectifier {rectifier_[static_cast<size_t>(channel)]};
+        for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
+            // channel_data[i] = static_cast<float>(wave_shaper.template eval<false>(channel_data[i]));
+            auto x = static_cast<double>(channel_data[i]);
+            const auto f = current_adaa_flag_ ? rectifier.getX1() > 0.f : x > 0.f;
+            x = current_adaa_flag_ ? rectifier.template processADAA<true>(x) : rectifier.template processADAA<false>(x);
+            x = juce::Decibels::gainToDecibels(x, -240.);
+            x = wave_shaper.eval(x);
+            x = juce::Decibels::decibelsToGain(x, -240.);
+            channel_data[i] = f ? static_cast<float>(x) : -static_cast<float>(x);
         }
     }
 }

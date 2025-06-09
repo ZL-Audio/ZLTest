@@ -54,7 +54,7 @@ namespace zldsp::compressor {
      * @tparam FloatType
      */
     template<typename FloatType>
-    class KneeComputer final : private zldsp::adaa::ADAA2<FloatType> {
+    class KneeComputer final {
     public:
         KneeComputer() = default;
 
@@ -79,9 +79,8 @@ namespace zldsp::compressor {
             para_high_g2_ = other.para_high_g2_;
         }
 
-        template<bool CurrentADAA = false>
         FloatType eval(FloatType x) {
-            return zldsp::adaa::ADAA2<FloatType>::template processADAA<CurrentADAA>(x);
+            return g0(x);
         }
 
         /**
@@ -126,7 +125,7 @@ namespace zldsp::compressor {
         DownCurve<FloatType> down_curve_;
         UpCurve<FloatType> up_curve_;
         std::atomic<FloatType> threshold_{-18}, ratio_{2};
-        std::atomic<FloatType> knee_w_{FloatType(0.25)}, curve_{0};
+        std::atomic<FloatType> knee_w_{FloatType(5)}, curve_{0};
         FloatType low_th_{0}, high_th_{0};
         // function parameters
         std::array<FloatType, 3> para_mid_g0_{}, para_high_g0_{};
@@ -178,33 +177,13 @@ namespace zldsp::compressor {
             return ((para_high_g2_[0] * x + para_high_g2_[1]) * x + para_high_g2_[2]) * x * x;
         }
 
-        FloatType g0(const FloatType x) override {
+        FloatType g0(FloatType x) {
             if (x < low_th_) {
                 return g0_low(x);
             } else if (x > high_th_) {
                 return g0_high(x);
             } else {
                 return g0_mid(x);
-            }
-        }
-
-        FloatType g1(const FloatType x) override {
-            if (x < low_th_) {
-                return g1_low(x);
-            } else if (x > high_th_) {
-                return g1_high(x);
-            } else {
-                return g1_mid(x);
-            }
-        }
-
-        FloatType g2(const FloatType x) override {
-            if (x < low_th_) {
-                return g2_low(x);
-            } else if (x > high_th_) {
-                return g2_high(x);
-            } else {
-                return g2_mid(x);
             }
         }
 
@@ -270,8 +249,6 @@ namespace zldsp::compressor {
             para_low_g2_[1] = para_low_g1_[1];
             para_low_g2_[2] = FloatType(0);
             para_low_g2_[2] = g2_mid(low_th_) - g2_low(low_th_);
-
-            zldsp::adaa::ADAA2<FloatType>::resetADAA();
         }
     };
 } // KneeComputer

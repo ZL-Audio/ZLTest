@@ -7,6 +7,7 @@
 #endif
 
 #include "knee_computer.hpp"
+#include "rectifier.hpp"
 
 class PluginProcessor : public juce::AudioProcessor, private juce::AsyncUpdater {
 public:
@@ -56,6 +57,7 @@ private:
     std::atomic<float> &adaa_flag_;
     bool current_adaa_flag_{false};
     std::array<zldsp::compressor::KneeComputer<double>, 2> wave_shaper_;
+    std::array<zldsp::compressor::Rectifier<double>, 2> rectifier_;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
     void handleAsyncUpdate() override;

@@ -64,6 +64,8 @@ namespace zldsp::adaa {
             return y;
         }
 
+        FloatType getX1() const { return x1_; }
+
     protected:
         /**
          *
