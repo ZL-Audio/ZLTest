@@ -80,6 +80,14 @@ void PluginProcessor::changeProgramName(int index, const juce::String &newName) 
 //==============================================================================
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     stage_.prepare(2, static_cast<size_t>(samplesPerBlock));
+    oversampler_.initProcessing(static_cast<size_t>(samplesPerBlock));
+
+    if (old_flag) {
+        pdc_.store(static_cast<int>(stage_.getLatency()));
+    } else {
+        pdc_.store(static_cast<int>(std::round(oversampler_.getLatencyInSamples())));
+    }
+    triggerAsyncUpdate();
 }
 
 void PluginProcessor::releaseResources() {
@@ -118,17 +126,12 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         if (old_flag) {
             pdc_.store(static_cast<int>(stage_.getLatency()));
         } else {
-            pdc_.store(0);
+            pdc_.store(static_cast<int>(std::round(oversampler_.getLatencyInSamples())));
         }
         triggerAsyncUpdate();
     }
 
     if (old_flag) {
-        // auto v1 = kfr::make_univector(buffer.getWritePointer(0), static_cast<size_t>(buffer.getNumSamples()));
-        // f1.apply(v1);
-        // auto v2 = kfr::make_univector(buffer.getWritePointer(1), static_cast<size_t>(buffer.getNumSamples()));
-        // f2.apply(v2);
-
         std::array<float *, 2> pointers = {buffer.getWritePointer(0), buffer.getWritePointer(1)};
         stage_.upsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
         auto &os_buffer = stage_.getOSBuffer();
@@ -138,11 +141,9 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         // }
         stage_.downsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
     } else {
-        // for (int channel = 0; channel < 2; ++channel) {
-        //     auto *data = buffer.getWritePointer(channel);
-        //     auto vector = kfr::make_univector(data, static_cast<size_t>(buffer.getNumSamples()));
-        //     vector = kfr::sin(1.5707963267948965f * vector);
-        // }
+        juce::dsp::AudioBlock<float> block(buffer);
+        oversampler_.processSamplesUp(block);
+        oversampler_.processSamplesDown(block);
     }
 }
 
