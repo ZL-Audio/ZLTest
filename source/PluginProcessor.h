@@ -1,13 +1,14 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "fft_engine/fft_engine.hpp"
+#include "over_sample/over_sample.hpp"
 
 #if (MSVC)
 #include "ipps.h"
 #endif
 
-class PluginProcessor : public juce::AudioProcessor {
+class PluginProcessor : public juce::AudioProcessor,
+                        private juce::AsyncUpdater {
 public:
     juce::AudioProcessorValueTreeState parameters;
 
@@ -52,30 +53,26 @@ public:
     void setStateInformation(const void *data, int sizeInBytes) override;
 
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
+    std::atomic<float> &flag;
+    bool old_flag{false};
+    std::atomic<int> pdc_{0};
+    kfr::univector<float, 53> taps = {
+        0.0, 0.00011071833641849496, 0.0, -0.00034292125098919817, 0.0, 0.0008340730541547668, 0.0,
+        -0.0017335249370894709, 0.0, 0.003244362402711567, 0.0, -0.005630398866738123, 0.0, 0.009242395565167542, 0.0,
+        -0.014586502646620205, 0.0, 0.02250479985326706, 0.0, -0.034695176940198295, 0.0, 0.05551339943988561, 0.0,
+        -0.10101812841049512, 0.0, 0.31655390623272733, 0.5000711190817596, 0.31655390623272733, 0.0,
+        -0.10101812841049512, 0.0, 0.05551339943988561, 0.0, -0.034695176940198295, 0.0, 0.02250479985326706, 0.0,
+        -0.014586502646620205, 0.0, 0.009242395565167542, 0.0, -0.005630398866738123, 0.0, 0.003244362402711567, 0.0,
+        -0.0017335249370894709, 0.0, 0.0008340730541547668, 0.0, -0.00034292125098919817, 0.0, 0.00011071833641849496,
+        0.0
+    };
+    kfr::fir_filter<float> f1{taps}, f2{taps};
 
-    static constexpr size_t fft_order = 13;
-    static constexpr size_t fft_size = static_cast<size_t>(1) << fft_order;
+    zldsp::oversample::OverSampleStage<float> stage_{
+        std::span(zldsp::oversample::kCoeff_64_08_80_float),
+        std::span(zldsp::oversample::kCoeff_64_08_80_float)
+    };
 
-    size_t overlap = 4; // 75% overlap
-    size_t hopSize = fft_size / overlap;
-    static constexpr float windowCorrection = 2.0f / 3.0f;
-    static constexpr float bypassCorrection = 1.0f / 4.0f;
-    // counts up until the next hop.
-    size_t count = 0;
-    // write position in input FIFO and read position in output FIFO.
-    size_t pos = 0;
-    // circular buffers for incoming and outgoing audio data.
-    std::vector<std::vector<float> > inputFIFOs, outputFIFOs;
-
-    std::vector<float> in_buffer;
-    std::vector<std::complex<float>> out_buffer;
-    std::vector<std::complex<float>> dummy_spectrum;
-    zlFFTEngine::KFREngine<float> kfr_engine;
-    zlFFTEngine::JUCEEngine<float> juce_engine;
-    std::unique_ptr<juce::dsp::WindowingFunction<float> > window;
-
-    void processFrame();
-
-    void processSpectrum();
+    void handleAsyncUpdate() override;
 };

@@ -10,12 +10,13 @@ PluginProcessor::PluginProcessor()
 #endif
           .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-      ), parameters(*this, nullptr, juce::Identifier("APVTSTutorial"),
+      ), parameters(*this, nullptr, juce::Identifier("ZLTestParaState"),
                     {
-                        std::make_unique<juce::AudioParameterBool>("kfr_engine", // parameterID
-                                                                   "KFR Engine", // parameter name
-                                                                   true) // default value
-                    }) {
+                        std::make_unique<juce::AudioParameterBool>("flag", // parameterID
+                                                                   "Over Sample", // parameter name
+                                                                   false) // default value
+                    }),
+      flag(*parameters.getRawParameterValue("flag")) {
 }
 
 PluginProcessor::~PluginProcessor() {
@@ -78,36 +79,7 @@ void PluginProcessor::changeProgramName(int index, const juce::String &newName) 
 
 //==============================================================================
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
-    juce::ignoreUnused(sampleRate, samplesPerBlock);
-
-    in_buffer.resize(fft_size);
-    std::ranges::fill(in_buffer, 1.f);
-    dummy_spectrum.resize(fft_size);
-    std::ranges::fill(dummy_spectrum, std::complex<float>(1.f, 0.f));
-    out_buffer.resize(fft_size);
-
-    kfr_engine.setOrder(fft_order);
-    juce_engine.setOrder(fft_order);
-
-    const size_t channel_num = static_cast<size_t>(getMainBusNumInputChannels());
-    inputFIFOs.resize(channel_num);
-    outputFIFOs.resize(channel_num);
-
-    pos = 0;
-    count = 0;
-    for (auto &fifo: inputFIFOs) {
-        fifo.resize(fft_size);
-        std::fill(fifo.begin(), fifo.end(), 0.f);
-    }
-    for (auto &fifo: outputFIFOs) {
-        fifo.resize(fft_size);
-        std::fill(fifo.begin(), fifo.end(), 0.f);
-    }
-
-    window = std::make_unique<juce::dsp::WindowingFunction<float> >(
-                fft_size + 1, juce::dsp::WindowingFunction<float>::WindowingMethod::hann, false);
+    stage_.prepare(2, static_cast<size_t>(samplesPerBlock));
 }
 
 void PluginProcessor::releaseResources() {
@@ -122,8 +94,7 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
 #else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-        && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
     // This checks if the input layout matches the output layout
@@ -141,47 +112,37 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     juce::ignoreUnused(midiMessages);
 
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-        auto *channelData = buffer.getWritePointer(channel);
-        juce::ignoreUnused(channelData);
-        // ..do something to the data...
+    const auto new_flag = flag.load(std::memory_order::relaxed) > .5f;
+    if (new_flag != old_flag) {
+        old_flag = new_flag;
+        if (old_flag) {
+            pdc_.store(static_cast<int>(stage_.getLatency()));
+        } else {
+            pdc_.store(0);
+        }
+        triggerAsyncUpdate();
     }
 
-    for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
-        for (size_t channel = 0; channel < static_cast<size_t>(buffer.getNumChannels()); ++channel) {
-            auto writePointer = buffer.getWritePointer(static_cast<int>(channel), static_cast<int>(i));
-            inputFIFOs[channel][pos] = static_cast<float>(*writePointer);
-            *writePointer = static_cast<float>(outputFIFOs[channel][pos]);
-            outputFIFOs[channel][pos] = float(0);
-        }
+    if (old_flag) {
+        // auto v1 = kfr::make_univector(buffer.getWritePointer(0), static_cast<size_t>(buffer.getNumSamples()));
+        // f1.apply(v1);
+        // auto v2 = kfr::make_univector(buffer.getWritePointer(1), static_cast<size_t>(buffer.getNumSamples()));
+        // f2.apply(v2);
 
-        pos += 1;
-        if (pos == fft_size) {
-            pos = 0;
-        }
-        count += 1;
-        if (count == hopSize) {
-            count = 0;
-            processFrame();
-        }
+        std::array<float *, 2> pointers = {buffer.getWritePointer(0), buffer.getWritePointer(1)};
+        stage_.upsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
+        auto &os_buffer = stage_.getOSBuffer();
+        // for (size_t channel = 0; channel < 2; ++channel) {
+        //     auto vector = kfr::make_univector(os_buffer[channel]);
+        //     vector = kfr::sin(1.5707963267948965f * vector);
+        // }
+        stage_.downsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
+    } else {
+        // for (int channel = 0; channel < 2; ++channel) {
+        //     auto *data = buffer.getWritePointer(channel);
+        //     auto vector = kfr::make_univector(data, static_cast<size_t>(buffer.getNumSamples()));
+        //     vector = kfr::sin(1.5707963267948965f * vector);
+        // }
     }
 }
 
@@ -209,44 +170,8 @@ void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
     juce::ignoreUnused(data, sizeInBytes);
 }
 
-void PluginProcessor::processFrame() {
-    for (size_t idx = 0; idx < inputFIFOs.size(); ++idx) {
-        const auto *inputPtr = inputFIFOs[idx].data();
-        auto *fftPtr = in_buffer.data();
-
-        // Copy the input FIFO into the FFT working space in two parts.
-        std::memcpy(fftPtr, inputPtr + pos, (fft_size - pos) * sizeof(float));
-        if (pos > 0) {
-            std::memcpy(fftPtr + fft_size - pos, inputPtr, pos * sizeof(float));
-        }
-
-        window->multiplyWithWindowingTable(fftPtr, fft_size);
-        processSpectrum();
-        window->multiplyWithWindowingTable(fftPtr, fft_size);
-
-        for (size_t i = 0; i < pos; ++i) {
-            outputFIFOs[idx][i] += in_buffer[i + fft_size - pos];
-        }
-        for (size_t i = 0; i < fft_size - pos; ++i) {
-            outputFIFOs[idx][i + pos] += in_buffer[i];
-        }
-    }
-}
-
-void PluginProcessor::processSpectrum() {
-    if (parameters.getRawParameterValue("kfr_engine")->load() > 0.f) {
-        kfr_engine.forward(in_buffer.data(), out_buffer.data());
-        for (size_t i = 0; i < fft_size / 2; ++i) {
-            out_buffer[i] *= dummy_spectrum[i];
-        }
-        kfr_engine.backward(out_buffer.data(), in_buffer.data());
-    } else {
-        juce_engine.forward(in_buffer.data(), out_buffer.data());
-        for (size_t i = 0; i < fft_size / 2; ++i) {
-            out_buffer[i] *= dummy_spectrum[i];
-        }
-        juce_engine.backward(out_buffer.data(), in_buffer.data());
-    }
+void PluginProcessor::handleAsyncUpdate() {
+    setLatencySamples(pdc_.load(std::memory_order::relaxed));
 }
 
 
