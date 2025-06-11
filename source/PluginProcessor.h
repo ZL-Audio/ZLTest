@@ -59,14 +59,11 @@ private:
     std::atomic<int> pdc_{0};
 
     juce::dsp::Oversampling<float> oversampler_{
-        2, 2, juce::dsp::Oversampling<float>::FilterType::filterHalfBandFIREquiripple, false, true
+        2, 3, juce::dsp::Oversampling<float>::FilterType::filterHalfBandFIREquiripple, true, true
     };
 
 
-    zldsp::oversample::OverSampleStage<float> stage_{
-        std::span(zldsp::oversample::kCoeff_64_08_80_float),
-        std::span(zldsp::oversample::kCoeff_64_08_80_float)
-    };
+    zldsp::oversample::OverSampler<float, 3> oversampler2_{};
 
     void handleAsyncUpdate() override;
 };

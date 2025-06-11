@@ -79,11 +79,12 @@ void PluginProcessor::changeProgramName(int index, const juce::String &newName) 
 
 //==============================================================================
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-    stage_.prepare(2, static_cast<size_t>(samplesPerBlock));
+    juce::ignoreUnused(sampleRate);
+    oversampler2_.prepare(2, static_cast<size_t>(samplesPerBlock));
     oversampler_.initProcessing(static_cast<size_t>(samplesPerBlock));
 
     if (old_flag) {
-        pdc_.store(static_cast<int>(stage_.getLatency()));
+        pdc_.store(static_cast<int>(oversampler2_.getLatency()));
     } else {
         pdc_.store(static_cast<int>(std::round(oversampler_.getLatencyInSamples())));
     }
@@ -124,7 +125,7 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     if (new_flag != old_flag) {
         old_flag = new_flag;
         if (old_flag) {
-            pdc_.store(static_cast<int>(stage_.getLatency()));
+            pdc_.store(static_cast<int>(oversampler2_.getLatency()));
         } else {
             pdc_.store(static_cast<int>(std::round(oversampler_.getLatencyInSamples())));
         }
@@ -133,16 +134,20 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
     if (old_flag) {
         std::array<float *, 2> pointers = {buffer.getWritePointer(0), buffer.getWritePointer(1)};
-        stage_.upsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
-        auto &os_buffer = stage_.getOSBuffer();
-        // for (size_t channel = 0; channel < 2; ++channel) {
-        //     auto vector = kfr::make_univector(os_buffer[channel]);
-        //     vector = kfr::sin(1.5707963267948965f * vector);
-        // }
-        stage_.downsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
+        oversampler2_.upsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
+        auto &os_buffer = oversampler2_.getOSBuffer();
+        for (size_t channel = 0; channel < 2; ++channel) {
+            auto vector = kfr::make_univector(os_buffer[channel]);
+            vector = kfr::sin(1.5707963267948965f * vector);
+        }
+        oversampler2_.downsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
     } else {
         juce::dsp::AudioBlock<float> block(buffer);
-        oversampler_.processSamplesUp(block);
+        auto os_block = oversampler_.processSamplesUp(block);
+        for (size_t channel = 0; channel < 2; ++channel) {
+            auto vector = kfr::make_univector(os_block.getChannelPointer(channel), os_block.getNumSamples());
+            vector = kfr::sin(1.5707963267948965f * vector);
+        }
         oversampler_.processSamplesDown(block);
     }
 }
