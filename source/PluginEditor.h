@@ -3,7 +3,8 @@
 #include "PluginProcessor.h"
 
 //==============================================================================
-class PluginEditor : public juce::AudioProcessorEditor {
+class PluginEditor : public juce::AudioProcessorEditor,
+                     private juce::Thread {
 public:
     explicit PluginEditor(PluginProcessor &);
 
@@ -14,12 +15,12 @@ public:
 
     void resized() override;
 
-    void parentHierarchyChanged() override;
-
 private:
-    PluginProcessor &processorRef;
+    juce::VBlankAttachment vblank_;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEditor)
+    double start_stamp{-1.0}, time_stamp_{-1.0};
 
-    juce::StringArray engines;
+    void repaintCallBack(double time_stamp);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
+    void run() override;
 };

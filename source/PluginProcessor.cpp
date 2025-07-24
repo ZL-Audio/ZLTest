@@ -10,13 +10,12 @@ PluginProcessor::PluginProcessor()
 #endif
           .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-      ), parameters(*this, nullptr, juce::Identifier("APVTSTutorial"),
+      ), parameters(*this, nullptr, juce::Identifier("ZLTest"),
                     {
                         std::make_unique<juce::AudioParameterBool>("adaa", // parameterID
                                                                    "ADAA", // parameter name
                                                                    false) // default value
-                    }),
-      adaa_flag_(*parameters.getRawParameterValue("adaa")) {
+                    }) {
 }
 
 PluginProcessor::~PluginProcessor() {
@@ -82,8 +81,6 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused(sampleRate, samplesPerBlock);
-    wave_shaper_[0].prepareBuffer();
-    wave_shaper_[1].prepareBuffer();
 }
 
 void PluginProcessor::releaseResources() {
@@ -114,31 +111,7 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
 
 void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                    juce::MidiBuffer &midiMessages) {
-    juce::ignoreUnused(midiMessages);
-
-    juce::ScopedNoDenormals no_denormals;
-    auto totalNumInputChannels = std::min(getTotalNumInputChannels(), 2);
-
-    const auto new_adda_flag = adaa_flag_.load() > 0.5f;
-    if (new_adda_flag != current_adaa_flag_) {
-        current_adaa_flag_ = new_adda_flag;
-        triggerAsyncUpdate();
-    }
-    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-        auto *channel_data = buffer.getWritePointer(channel);
-        auto &wave_shaper{wave_shaper_[static_cast<size_t>(channel)]};
-        auto &rectifier {rectifier_[static_cast<size_t>(channel)]};
-        for (size_t i = 0; i < static_cast<size_t>(buffer.getNumSamples()); ++i) {
-            // channel_data[i] = static_cast<float>(wave_shaper.template eval<false>(channel_data[i]));
-            auto x = static_cast<double>(channel_data[i]);
-            const auto f = current_adaa_flag_ ? rectifier.getX1() > 0.f : x > 0.f;
-            x = current_adaa_flag_ ? rectifier.template processADAA<true>(x) : rectifier.template processADAA<false>(x);
-            x = juce::Decibels::gainToDecibels(x, -240.);
-            x = wave_shaper.eval(x);
-            x = juce::Decibels::decibelsToGain(x, -240.);
-            channel_data[i] = f ? static_cast<float>(x) : -static_cast<float>(x);
-        }
-    }
+    juce::ignoreUnused(buffer, midiMessages);
 }
 
 //==============================================================================
@@ -147,8 +120,8 @@ bool PluginProcessor::hasEditor() const {
 }
 
 juce::AudioProcessorEditor *PluginProcessor::createEditor() {
-    return new juce::GenericAudioProcessorEditor(*this);
-    // return new PluginEditor(*this);
+    // return new juce::GenericAudioProcessorEditor(*this);
+    return new PluginEditor(*this);
 }
 
 //==============================================================================
@@ -163,14 +136,6 @@ void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
     juce::ignoreUnused(data, sizeInBytes);
-}
-
-void PluginProcessor::handleAsyncUpdate() {
-    if (adaa_flag_.load() < .5f) {
-        setLatencySamples(0);
-    } else {
-        setLatencySamples(1);
-    }
 }
 
 //==============================================================================

@@ -2,14 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
-#if (MSVC)
-#include "ipps.h"
-#endif
-
-#include "knee_computer.hpp"
-#include "rectifier.hpp"
-
-class PluginProcessor : public juce::AudioProcessor, private juce::AsyncUpdater {
+class PluginProcessor : public juce::AudioProcessor {
 public:
     juce::AudioProcessorValueTreeState parameters;
 
@@ -54,11 +47,5 @@ public:
     void setStateInformation(const void *data, int sizeInBytes) override;
 
 private:
-    std::atomic<float> &adaa_flag_;
-    bool current_adaa_flag_{false};
-    std::array<zldsp::compressor::KneeComputer<double>, 2> wave_shaper_;
-    std::array<zldsp::compressor::Rectifier<double>, 2> rectifier_;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
-
-    void handleAsyncUpdate() override;
 };

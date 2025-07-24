@@ -14,7 +14,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DISPLAY: :0 # linux pluginval needs this
   HOMEBREW_NO_INSTALL_CLEANUP: 1
-  IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
 
 # jobs are run in paralell on different machines
 # all steps run in series
@@ -78,7 +77,6 @@ jobs:
         shell: bash
         run: |
           choco install ninja
-          choco upgrade llvm --version 18.1.8
 
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
