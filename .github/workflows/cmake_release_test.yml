@@ -14,7 +14,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DISPLAY: :0 # linux pluginval needs this
   HOMEBREW_NO_INSTALL_CLEANUP: 1
-  IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
 
 # jobs are run in paralell on different machines
 # all steps run in series
@@ -54,13 +53,6 @@ jobs:
         run: |
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype-dev libfontconfig1-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev xvfb ninja-build
           sudo /usr/bin/Xvfb $DISPLAY &
-
-      - name: Install Ninja & LLVM (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          choco install ninja --no-progress -y
-          choco upgrade llvm --version 18.1.8 --no-progress -y
 
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
