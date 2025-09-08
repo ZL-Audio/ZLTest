@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_dsp/juce_dsp.h>
 #include "over_sample/over_sample.hpp"
 
 #if (MSVC)
@@ -53,17 +54,49 @@ public:
     void setStateInformation(const void *data, int sizeInBytes) override;
 
 private:
+    enum OversampleIDx {
+        kNone,
+        kJUCE2,
+        kJUCE8,
+        kSmall2,
+        kSmall8,
+        kLarge2,
+        kLarge8
+    };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
     std::atomic<float> &flag;
-    bool old_flag{false};
+    OversampleIDx c_flag;
     std::atomic<int> pdc_{0};
 
-    juce::dsp::Oversampling<float> oversampler_{
+    std::array<float *, 2> pointers_{};
+
+    juce::dsp::Oversampling<float> juce_oversampler2_{
+        2, 1, juce::dsp::Oversampling<float>::FilterType::filterHalfBandFIREquiripple, true, true
+    };
+
+    juce::dsp::Oversampling<float> juce_oversampler8_{
         2, 3, juce::dsp::Oversampling<float>::FilterType::filterHalfBandFIREquiripple, true, true
     };
 
+    zldsp::oversample::OverSampler<float, 1> oversampler2_small_{
+        {zldsp::oversample::halfband_coeff::CoeffID::k96_07_100}
+    };
 
-    zldsp::oversample::OverSampler<float, 3> oversampler2_{};
+    zldsp::oversample::OverSampler<float, 3> oversampler8_small_{
+        {
+            zldsp::oversample::halfband_coeff::CoeffID::k96_07_100,
+            zldsp::oversample::halfband_coeff::CoeffID::k32_22_100,
+            zldsp::oversample::halfband_coeff::CoeffID::k32_22_100
+        }
+    };
+
+    zldsp::oversample::OverSampler<float, 1> oversampler2_{};
+    zldsp::oversample::OverSampler<float, 3> oversampler8_{};
+
+    void updateLatency();
 
     void handleAsyncUpdate() override;
+
+    static void processSamples(float *samples, const size_t num_samples);
 };

@@ -12,9 +12,18 @@ PluginProcessor::PluginProcessor()
 #endif
       ), parameters(*this, nullptr, juce::Identifier("ZLTestParaState"),
                     {
-                        std::make_unique<juce::AudioParameterBool>("flag", // parameterID
-                                                                   "Over Sample", // parameter name
-                                                                   false) // default value
+                        std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("flag", 1),
+                                                                     "Over Sample",
+                                                                     juce::StringArray{
+                                                                         "None",
+                                                                         "JUCE 2*",
+                                                                         "JUCE 8*",
+                                                                         "Small 2*",
+                                                                         "Small 8*",
+                                                                         "Large 2*",
+                                                                         "Large 8*"
+                                                                     },
+                                                                     0)
                     }),
       flag(*parameters.getRawParameterValue("flag")) {
 }
@@ -80,13 +89,56 @@ void PluginProcessor::changeProgramName(int index, const juce::String &newName) 
 //==============================================================================
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     juce::ignoreUnused(sampleRate);
-    oversampler2_.prepare(2, static_cast<size_t>(samplesPerBlock));
-    oversampler_.initProcessing(static_cast<size_t>(samplesPerBlock));
 
-    if (old_flag) {
-        pdc_.store(static_cast<int>(oversampler2_.getLatency()));
-    } else {
-        pdc_.store(static_cast<int>(std::round(oversampler_.getLatencyInSamples())));
+    juce_oversampler2_.initProcessing(static_cast<size_t>(samplesPerBlock));
+    juce_oversampler8_.initProcessing(static_cast<size_t>(samplesPerBlock));
+
+    oversampler2_small_.prepare(2, static_cast<size_t>(samplesPerBlock));
+    oversampler8_small_.prepare(2, static_cast<size_t>(samplesPerBlock));
+
+    oversampler2_.prepare(2, static_cast<size_t>(samplesPerBlock));
+    oversampler8_.prepare(2, static_cast<size_t>(samplesPerBlock));
+
+    c_flag = static_cast<OversampleIDx>(std::round(flag.load(std::memory_order::relaxed)));
+    updateLatency();
+}
+
+void PluginProcessor::updateLatency() {
+    switch (c_flag) {
+        case kNone: {
+            pdc_.store(0);
+            break;
+        }
+        case kJUCE2: {
+            juce_oversampler2_.reset();
+            pdc_.store(static_cast<int>(std::round(juce_oversampler2_.getLatencyInSamples())));
+            break;
+        }
+        case kJUCE8: {
+            juce_oversampler8_.reset();
+            pdc_.store(static_cast<int>(std::round(juce_oversampler8_.getLatencyInSamples())));
+            break;
+        }
+        case kSmall2: {
+            oversampler2_small_.reset();
+            pdc_.store(static_cast<int>(oversampler2_small_.getLatency()));
+            break;
+        }
+        case kSmall8: {
+            oversampler8_small_.reset();
+            pdc_.store(static_cast<int>(oversampler8_small_.getLatency()));
+            break;
+        }
+        case kLarge2: {
+            oversampler2_.reset();
+            pdc_.store(static_cast<int>(oversampler2_.getLatency()));
+            break;
+        }
+        case kLarge8: {
+            oversampler8_.reset();
+            pdc_.store(static_cast<int>(oversampler8_.getLatency()));
+            break;
+        }
     }
     triggerAsyncUpdate();
 }
@@ -121,34 +173,90 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     juce::ignoreUnused(midiMessages);
 
     juce::ScopedNoDenormals noDenormals;
-    const auto new_flag = flag.load(std::memory_order::relaxed) > .5f;
-    if (new_flag != old_flag) {
-        old_flag = new_flag;
-        if (old_flag) {
-            pdc_.store(static_cast<int>(oversampler2_.getLatency()));
-        } else {
-            pdc_.store(static_cast<int>(std::round(oversampler_.getLatencyInSamples())));
-        }
-        triggerAsyncUpdate();
+    const auto new_flag = static_cast<OversampleIDx>(std::round(flag.load(std::memory_order::relaxed)));
+    if (new_flag != c_flag) {
+        c_flag = new_flag;
+        updateLatency();
     }
 
-    if (old_flag) {
-        std::array<float *, 2> pointers = {buffer.getWritePointer(0), buffer.getWritePointer(1)};
-        oversampler2_.upsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
-        auto &os_buffer = oversampler2_.getOSBuffer();
-        for (size_t channel = 0; channel < 2; ++channel) {
-            auto vector = kfr::make_univector(os_buffer[channel]);
-            vector = kfr::sin(1.5707963267948965f * vector);
+    switch (c_flag) {
+        case kNone: {
+            for (size_t channel = 0; channel < 2; ++channel) {
+                const auto pointer = buffer.getWritePointer(static_cast<int>(channel));
+                processSamples(pointer, static_cast<size_t>(buffer.getNumSamples()));
+            }
+            break;
         }
-        oversampler2_.downsample(pointers, static_cast<size_t>(buffer.getNumSamples()));
-    } else {
-        juce::dsp::AudioBlock<float> block(buffer);
-        auto os_block = oversampler_.processSamplesUp(block);
-        for (size_t channel = 0; channel < 2; ++channel) {
-            auto vector = kfr::make_univector(os_block.getChannelPointer(channel), os_block.getNumSamples());
-            vector = kfr::sin(1.5707963267948965f * vector);
+        case kJUCE2: {
+            juce::dsp::AudioBlock<float> block(buffer);
+            const auto os_block = juce_oversampler2_.processSamplesUp(block);
+            for (size_t channel = 0; channel < 2; ++channel) {
+                const auto pointer = os_block.getChannelPointer(channel);
+                processSamples(pointer, os_block.getNumSamples());
+            }
+            juce_oversampler2_.processSamplesDown(block);
+            break;
         }
-        oversampler_.processSamplesDown(block);
+        case kJUCE8: {
+            juce::dsp::AudioBlock<float> block(buffer);
+            const auto os_block = juce_oversampler8_.processSamplesUp(block);
+            for (size_t channel = 0; channel < 2; ++channel) {
+                const auto pointer = os_block.getChannelPointer(channel);
+                processSamples(pointer, os_block.getNumSamples());
+            }
+            juce_oversampler8_.processSamplesDown(block);
+            break;
+        }
+        case kSmall2: {
+            pointers_[0] = buffer.getWritePointer(0);
+            pointers_[1] = buffer.getWritePointer(1);
+            oversampler2_small_.upsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            const auto &os_pointers = oversampler2_small_.getOSPointer();
+            for (size_t channel = 0; channel < 2; ++channel) {
+                processSamples(os_pointers[channel], static_cast<size_t>(buffer.getNumSamples()) << 1);
+            }
+            oversampler2_small_.downsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            break;
+        }
+        case kSmall8: {
+            pointers_[0] = buffer.getWritePointer(0);
+            pointers_[1] = buffer.getWritePointer(1);
+            oversampler8_small_.upsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            const auto &os_pointers = oversampler8_small_.getOSPointer();
+            for (size_t channel = 0; channel < 2; ++channel) {
+                processSamples(os_pointers[channel], static_cast<size_t>(buffer.getNumSamples()) << 3);
+            }
+            oversampler8_small_.downsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            break;
+        }
+        case kLarge2: {
+            pointers_[0] = buffer.getWritePointer(0);
+            pointers_[1] = buffer.getWritePointer(1);
+            oversampler2_.upsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            const auto &os_pointers = oversampler2_.getOSPointer();
+            for (size_t channel = 0; channel < 2; ++channel) {
+                processSamples(os_pointers[channel], static_cast<size_t>(buffer.getNumSamples()) << 1);
+            }
+            oversampler2_.downsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            break;
+        }
+        case kLarge8: {
+            pointers_[0] = buffer.getWritePointer(0);
+            pointers_[1] = buffer.getWritePointer(1);
+            oversampler8_.upsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            const auto &os_pointers = oversampler8_.getOSPointer();
+            for (size_t channel = 0; channel < 2; ++channel) {
+                processSamples(os_pointers[channel], static_cast<size_t>(buffer.getNumSamples()) << 3);
+            }
+            oversampler8_.downsample(pointers_, static_cast<size_t>(buffer.getNumSamples()));
+            break;
+        }
+    }
+}
+
+void PluginProcessor::processSamples(float *samples, const size_t num_samples) {
+    for (size_t i = 0; i < num_samples; ++i) {
+        samples[i] = std::tanh(samples[i]);
     }
 }
 
@@ -179,7 +287,6 @@ void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
 void PluginProcessor::handleAsyncUpdate() {
     setLatencySamples(pdc_.load(std::memory_order::relaxed));
 }
-
 
 //==============================================================================
 // This creates new instances of the plugin..
