@@ -80,14 +80,14 @@ private:
     };
 
     zldsp::oversample::OverSampler<float, 1> oversampler2_small_{
-        {zldsp::oversample::halfband_coeff::CoeffID::k96_07_100}
+        {zldsp::oversample::halfband_coeff::CoeffID::k96}
     };
 
     zldsp::oversample::OverSampler<float, 3> oversampler8_small_{
         {
-            zldsp::oversample::halfband_coeff::CoeffID::k96_07_100,
-            zldsp::oversample::halfband_coeff::CoeffID::k32_22_100,
-            zldsp::oversample::halfband_coeff::CoeffID::k32_22_100
+            zldsp::oversample::halfband_coeff::CoeffID::k96,
+            zldsp::oversample::halfband_coeff::CoeffID::k32,
+            zldsp::oversample::halfband_coeff::CoeffID::k32
         }
     };
 
