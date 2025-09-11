@@ -27,14 +27,14 @@ namespace zldsp::oversample {
             static_assert(NumStage <= 6);
             // init the first stage with a large filter
             stages_.emplace_back(OverSampleStage<FloatType>{
-                halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k128),
-                halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k128)
+                halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k128_05),
+                halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k128_05)
             });
             // init the remaining stages with a small filter
             for (size_t i = 1; i < NumStage; ++i) {
                 stages_.emplace_back(OverSampleStage<FloatType>{
-                    halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k32),
-                    halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k32)
+                    halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k32_22),
+                    halfband_coeff::getCoeffByID<FloatType>(halfband_coeff::k32_22)
                 });
             }
         }
