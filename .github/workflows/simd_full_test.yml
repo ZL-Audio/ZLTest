@@ -31,10 +31,13 @@ jobs:
       - name: Check CPU Features (macOS)
         if: runner.os == 'macOS'
         run: |
-          echo "--- CPU Features from sysctl ---"
-          sysctl -a | grep machdep.cpu.features
-          echo "\n--- Optional Features ---"
-          sysctl hw.optional
+          if [[ "$(uname -m)" == "arm64" ]]; then
+            echo "--- Running on Apple Silicon (ARM64) ---"
+            sysctl -a | grep machdep.cpu.features
+          else
+            echo "--- Running on Intel (x86_64) ---"
+            sysctl hw.optional
+          fi
 
       - name: Check CPU Features (Windows)
         if: runner.os == 'Windows'
@@ -44,7 +47,7 @@ jobs:
           Invoke-WebRequest -Uri https://live.sysinternals.com/coreinfo.exe -OutFile coreinfo.exe
           
           # Run it and display the results
-          ./coreinfo.exe -f
+          ./coreinfo.exe -f -accepteula
 
       - name: Check CPU Features (Linux)
         if: runner.os == 'Linux'
