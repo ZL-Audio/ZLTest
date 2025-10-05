@@ -255,9 +255,10 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 }
 
 void PluginProcessor::processSamples(float *samples, const size_t num_samples) {
-    for (size_t i = 0; i < num_samples; ++i) {
-        samples[i] = std::tanh(samples[i]);
-    }
+    juce::ignoreUnused(samples, num_samples);
+    // for (size_t i = 0; i < num_samples; ++i) {
+    //     samples[i] = std::tanh(samples[i]);
+    // }
 }
 
 //==============================================================================

@@ -1,0 +1,53 @@
+name: SIMD Test
+
+on:
+  push:
+    branches: [simd_test]
+  workflow_dispatch:
+
+# When pushing new commits, cancel any running builds on that branch
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+# jobs are run in paralell on different machines
+# all steps run in series
+jobs:
+  build_and_test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+          - name: macOS
+            os: macos-latest
+          - name: Windows
+            os: windows-latest
+
+    steps:
+      - name: Check CPU Features (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "--- CPU Features from sysctl ---"
+          sysctl -a | grep machdep.cpu.features
+          echo "\n--- Optional Features ---"
+          sysctl hw.optional
+
+      - name: Check CPU Features (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Download Coreinfo
+          Invoke-WebRequest -Uri https://live.sysinternals.com/coreinfo.exe -OutFile coreinfo.exe
+          
+          # Run it and display the results
+          ./coreinfo.exe -f
+
+      - name: Check CPU Features (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "--- CPU Flags from /proc/cpuinfo ---"
+          grep -E 'sse|avx' /proc/cpuinfo | head -n 1
