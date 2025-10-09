@@ -78,6 +78,11 @@ jobs:
         run: |
           choco install ninja
 
+      - name: Install InnoSetup (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: choco upgrade innosetup -y --no-progress
+
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
         run: brew install ninja osxutils
