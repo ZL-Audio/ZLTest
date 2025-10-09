@@ -4,7 +4,7 @@ PluginEditor::PluginEditor(PluginProcessor &p)
     : AudioProcessorEditor(&p), Thread("zltest"),
       vblank_(this, [this](const double x) { repaintCallBack(x); }) {
     setSize(300, 185);
-    getConstrainer()->setFixedAspectRatio(1.f);
+    // getConstrainer()->setFixedAspectRatio(1.f);
     setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
 
     startThread(juce::Thread::Priority::low);
@@ -20,10 +20,9 @@ void PluginEditor::paint(juce::Graphics &g) {
     g.fillAll(juce::Colours::black);
     g.setColour(juce::Colours::white);
     auto bound = getLocalBounds().toFloat();
-    const auto height = bound.getHeight();
-    g.setFont(height * .375f);
+    g.setFont(std::min(bound.getHeight() * .75f, bound.getWidth() * .25f));
     const auto seconds = static_cast<size_t>(std::max(0.0, std::floor(time_stamp_ - start_stamp)));
-    auto hour_string = std::to_string(seconds / 60);
+    auto hour_string = std::to_string((seconds / 60) % 100);
     while (hour_string.length() < 2) {
         hour_string.insert(0, "0");
     }
@@ -31,11 +30,20 @@ void PluginEditor::paint(juce::Graphics &g) {
     while (second_string.length() < 2) {
         second_string.insert(0, "0");
     }
-    g.drawText(hour_string + ":" + second_string,
-               getLocalBounds(), juce::Justification::centred);
+    auto left_bound = getLocalBounds().toFloat();
+    const auto right_bound = left_bound.removeFromRight(left_bound.getWidth() * .5f);
+    const auto center_bound = getLocalBounds().toFloat().withSizeKeepingCentre(
+        left_bound.getWidth(), left_bound.getHeight());
+    g.drawText(hour_string + " ", left_bound, juce::Justification::centredRight);
+    g.drawText(":", center_bound, juce::Justification::centred);
+    g.drawText(" " + second_string, right_bound, juce::Justification::centredLeft);
 }
 
 void PluginEditor::resized() {
+}
+
+void PluginEditor::mouseDown(const juce::MouseEvent&) {
+    start_stamp = -1.0;
 }
 
 void PluginEditor::repaintCallBack(const double time_stamp) {

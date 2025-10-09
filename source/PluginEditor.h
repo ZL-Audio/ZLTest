@@ -15,6 +15,8 @@ public:
 
     void resized() override;
 
+    void mouseDown(const juce::MouseEvent& event) override;
+
 private:
     juce::VBlankAttachment vblank_;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEditor)
