@@ -18,8 +18,22 @@ PluginEditor::~PluginEditor() {
 
 void PluginEditor::paint(juce::Graphics &g) {
     g.fillAll(juce::Colours::black);
-    g.setColour(juce::Colours::white);
+
     auto bound = getLocalBounds().toFloat();
+    juce::Path path;
+    const auto temp_bound = bound.reduced(5.f);
+    path.startNewSubPath(temp_bound.getBottomLeft());
+    path.lineTo(temp_bound.getTopRight());
+    path.lineTo(temp_bound.getBottomRight());
+
+    g.setColour(juce::Colours::orange);
+    g.fillPath(path);
+    g.setColour(juce::Colours::white);
+    g.strokePath(path, juce::PathStrokeType{2.5f});
+
+    return;
+
+    g.setColour(juce::Colours::white);
     g.setFont(std::min(bound.getHeight() * .75f, bound.getWidth() * .25f));
     const auto seconds = static_cast<size_t>(std::max(0.0, std::floor(time_stamp_ - start_stamp)));
     auto hour_string = std::to_string((seconds / 60) % 100);
