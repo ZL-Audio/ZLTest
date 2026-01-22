@@ -50,7 +50,6 @@ def main():
     f.write(f'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">\n')
     
     # Generate Product GUID and UpgradeCode
-    # Note: Product ID is * (auto) for Major Upgrades
     upgrade_code = get_guid(f"{project_name}_UpgradeCode") 
 
     f.write(f'    <Product Id="*" Name="{escape_xml(product_name)}" Language="1033" Version="{version}" Manufacturer="{escape_xml(publisher)}" UpgradeCode="{upgrade_code}">\n')
@@ -128,6 +127,7 @@ def main():
             
             f.write(f'            <Directory Id="{bundle_dir_id}" Name="{bundle_dir_name}">\n')
             
+            # Pass 'f' (the file object) to the function
             write_dir_recursive(f, source_path, bundle_dir_id, features[feature_id]["components"], fmt_name)
 
             f.write('            </Directory>\n')
@@ -142,7 +142,6 @@ def main():
                 features[feature_id]["components"].append(comp_id)
                 target_name = f"{product_name}.{ext}"
                 
-                # Guid attribute GETS get_guid (UUID), Id attribute GETS get_wix_id
                 f.write(f'            <Component Id="{comp_id}" Guid="{get_guid(comp_id)}" Win64="yes">\n')
                 f.write(f'                <File Id="{file_id}" Source="{source_path}" Name="{target_name}" KeyPath="yes" />\n')
                 f.write('            </Component>\n')
@@ -181,29 +180,28 @@ def write_dir_recursive(file_handle, current_os_path, parent_wix_id, component_l
     for filename in files:
         full_path = os.path.join(current_os_path, filename)
         
-        # --- FIX: Generate valid WiX IDs ---
+        # Unique IDs
         file_id = get_wix_id(f"FILE_{prefix}_{full_path}")
         comp_id = get_wix_id(f"COMP_{prefix}_{full_path}")
         
         component_list.append(comp_id)
         
-        # Component Id = valid identifier
-        # Component Guid = valid UUID
-        f.write(f'                <Component Id="{comp_id}" Guid="{get_guid(comp_id)}" Win64="yes">\n')
-        f.write(f'                    <File Id="{file_id}" Source="{full_path}" KeyPath="yes" />\n')
-        f.write(f'                </Component>\n')
+        # Use file_handle instead of f
+        file_handle.write(f'                <Component Id="{comp_id}" Guid="{get_guid(comp_id)}" Win64="yes">\n')
+        file_handle.write(f'                    <File Id="{file_id}" Source="{full_path}" KeyPath="yes" />\n')
+        file_handle.write(f'                </Component>\n')
 
     # Recurse Dirs
     for dirname in dirs:
         full_path = os.path.join(current_os_path, dirname)
         
-        # --- FIX: Generate valid WiX IDs ---
         dir_id = get_wix_id(f"DIR_{prefix}_{full_path}")
         clean_dirname = escape_xml(dirname)
         
-        f.write(f'                <Directory Id="{dir_id}" Name="{clean_dirname}">\n')
+        # Use file_handle instead of f
+        file_handle.write(f'                <Directory Id="{dir_id}" Name="{clean_dirname}">\n')
         write_dir_recursive(file_handle, full_path, dir_id, component_list, prefix)
-        f.write(f'                </Directory>\n')
+        file_handle.write(f'                </Directory>\n')
 
 if __name__ == '__main__':
     main()
