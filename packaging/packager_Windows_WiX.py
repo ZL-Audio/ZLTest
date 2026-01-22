@@ -2,7 +2,6 @@ import os
 import sys
 import uuid
 import hashlib
-from pathlib import Path
 
 # Helper to generate stable GUIDs
 NAMESPACE_GUID = uuid.UUID('12345678-1234-5678-1234-567812345678')
@@ -47,9 +46,7 @@ def main():
     f.write(f'        <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />\n')
     f.write(f'        <MediaTemplate EmbedCab="yes" />\n')
 
-    # 3. Upgrade Detection (Fixing ICE61)
-    # We only use this to detect if a newer version is present for the popup.
-    # We add 'IncludeMaximum' to avoid overlap confusion, though MajorUpgrade handles the actual logic.
+    # 3. Upgrade Detection
     f.write(f'        <Upgrade Id="{upgrade_code}">\n')
     f.write(f'            <UpgradeVersion Minimum="{version}" IncludeMinimum="no" OnlyDetect="yes" Property="NEWER_VERSION_DETECTED" />\n')
     f.write(f'        </Upgrade>\n')
@@ -104,7 +101,7 @@ def main():
 
         print(f"Harvesting {fmt_name} from {source_path}...")
         
-        # 1. Define Property (Checkbox)
+        # Checkbox Property
         checkbox_prop = f"INSTALL_{fmt_name.upper()}"
         f.write(f'        <Property Id="{checkbox_prop}" Value="1" />\n')
         found_formats.append((fmt_name, checkbox_prop))
@@ -141,7 +138,6 @@ def main():
     f.write('        <Feature Id="Complete" Title="Complete Installation" Display="expand" Level="1" ConfigurableDirectory="TARGETDIR">\n')
     for feat_id, data in features.items():
         if not data["components"]: continue 
-        # 2. Condition Feature based on Checkbox (Level 0 = Disabled)
         f.write(f'            <Feature Id="{feat_id}" Title="{data["title"]}" Level="1">\n')
         f.write(f'                <Condition Level="0"><![CDATA[{data["property"]} <> "1"]]></Condition>\n')
         for comp_id in data["components"]:
@@ -164,9 +160,7 @@ def main():
     f.write(f'        <WixVariable Id="WixUILicenseRtf" Value="{license_file}" />\n')
     f.write(f'        <Property Id="WIXUI_INSTALLDIR" Value="{company_dir_id}" />\n')
 
-    # --- UI Injection (Fixing ICE20) ---
     f.write('        <UI>\n')
-    # Use standard InstallDir logic (Provides ErrorDialog, FatalError, etc automatically)
     f.write('            <UIRef Id="WixUI_InstallDir" />\n')
     f.write('            <UIRef Id="WixUI_ErrorProgressText" />\n')
 
@@ -178,8 +172,10 @@ def main():
     f.write('                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">\n')
     f.write('                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>\n')
     f.write('                </Control>\n')
+    
+    # KEY CHANGE 1: Back Button points to License Agreement
     f.write('                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">\n')
-    f.write('                    <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>\n')
+    f.write('                    <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>\n')
     f.write('                </Control>\n')
     
     f.write('                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Select the plugin formats you wish to install:" />\n')
@@ -195,13 +191,10 @@ def main():
         
     f.write('            </Dialog>\n')
 
-    # --- THE OVERRIDES ---
-    # We use Order="5" to force these actions to take precedence over the default WixUI_InstallDir actions.
+    # KEY CHANGE 2: Rewire License Agreement to go straight to Plugin Selection
+    f.write('            <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="PluginSelectDlg" Order="5">LicenseAccepted = "1"</Publish>\n')
     
-    # 1. On InstallDirDlg "Next", go to PluginSelectDlg (Instead of VerifyReady)
-    f.write('            <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="PluginSelectDlg" Order="5">1</Publish>\n')
-    
-    # 2. On VerifyReadyDlg "Back", go to PluginSelectDlg (Instead of InstallDir)
+    # KEY CHANGE 3: Rewire VerifyReady to go back to Plugin Selection
     f.write('            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="PluginSelectDlg" Order="5">1</Publish>\n')
     
     f.write('        </UI>\n')
