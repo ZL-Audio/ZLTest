@@ -50,8 +50,28 @@ def main():
 
     f.write(f'    <Product Id="*" Name="{escape_xml(product_name)}" Language="1033" Version="{version}" Manufacturer="{escape_xml(publisher)}" UpgradeCode="{upgrade_code}">\n')
     f.write(f'        <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="{platform_val}" />\n')
-    f.write('        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />\n')
-    f.write('        <MediaTemplate EmbedCab="yes" />\n')
+    f.write(f'        <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />\n')
+
+    f.write(f'        <MediaTemplate EmbedCab="yes" />\n')
+
+    # -------------------------------------------------------------------------
+    # 3. DETECT if a newer version exists (for our custom warning)
+    #    We need to know if we are downgrading so we can trigger the popup.
+    # -------------------------------------------------------------------------
+    f.write(f'        <Upgrade Id="{upgrade_code}">\n')
+    f.write(f'            <UpgradeVersion Minimum="{version}" IncludeMinimum="no" OnlyDetect="yes" Property="NEWER_VERSION_DETECTED" />\n')
+    f.write(f'        </Upgrade>\n')
+
+    # 4. DEFINE THE WARNING POPUP (VBScript)
+    #    This runs a simple message box. If the user clicks "Cancel" (2), installation stops.
+    f.write('        <Binary Id="DowngradeWarningScript" SourceFile="packaging/downgrade_warn.vbs" />\n')
+    f.write('        <CustomAction Id="CA_WarnDowngrade" BinaryKey="DowngradeWarningScript" VBScriptCall="Main" />\n')
+    
+    # 5. TRIGGER THE POPUP
+    #    Only run this in the UI Sequence, and ONLY if we detected a newer version.
+    f.write('        <InstallUISequence>\n')
+    f.write('            <Custom Action="CA_WarnDowngrade" After="AppSearch">NEWER_VERSION_DETECTED</Custom>\n')
+    f.write('        </InstallUISequence>\n')
 
     # --- UI Configuration & EULA Logic ---
     f.write('        <UIRef Id="WixUI_FeatureTree" />\n')
@@ -171,6 +191,23 @@ def main():
     f.write('</Wix>\n')
     f.close()
     print(f"Generated {outfile_path}")
+
+    vbs_path = "packaging/downgrade_warn.vbs"
+    with open(vbs_path, "w") as vbs:
+        vbs.write("""
+Function Main()
+    Dim result
+    ' MsgBox(Prompt, Buttons+Icon, Title)
+    ' 1 = OK/Cancel, 48 = Warning Icon
+    result = MsgBox("You are installing an older version of this product. This effectively downgrades the installation. Do you want to continue?", 49, "Downgrade Warning")
+    
+    If result = 2 Then ' 2 is Cancel
+        Main = 1602 ' User Cancelled Error Code
+    Else
+        Main = 1 ' Success
+    End If
+End Function
+""")
 
 def write_dir_recursive(file_handle, current_os_path, parent_wix_id, component_list, prefix):
     try:
