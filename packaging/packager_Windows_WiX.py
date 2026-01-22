@@ -32,6 +32,8 @@ def main():
     program_files_folder = "ProgramFiles64Folder" 
 
     outfile_path = "packaging/installer.wxs"
+    overrides_path = "packaging/overrides.wxl" # NEW FILE
+    
     os.makedirs(os.path.dirname(outfile_path), exist_ok=True)
     f = open(outfile_path, "w", encoding="utf-8")
 
@@ -101,7 +103,6 @@ def main():
 
         print(f"Harvesting {fmt_name} from {source_path}...")
         
-        # Checkbox Property
         checkbox_prop = f"INSTALL_{fmt_name.upper()}"
         f.write(f'        <Property Id="{checkbox_prop}" Value="1" />\n')
         found_formats.append((fmt_name, checkbox_prop))
@@ -173,7 +174,7 @@ def main():
     f.write('                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>\n')
     f.write('                </Control>\n')
     
-    # KEY CHANGE 1: Back Button points to License Agreement
+    # Back button goes to License
     f.write('                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">\n')
     f.write('                    <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>\n')
     f.write('                </Control>\n')
@@ -191,10 +192,10 @@ def main():
         
     f.write('            </Dialog>\n')
 
-    # KEY CHANGE 2: Rewire License Agreement to go straight to Plugin Selection
+    # Rewire License -> PluginSelect
     f.write('            <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="PluginSelectDlg" Order="5">LicenseAccepted = "1"</Publish>\n')
     
-    # KEY CHANGE 3: Rewire VerifyReady to go back to Plugin Selection
+    # Rewire VerifyReady -> PluginSelect
     f.write('            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="PluginSelectDlg" Order="5">1</Publish>\n')
     
     f.write('        </UI>\n')
@@ -204,8 +205,23 @@ def main():
     f.close()
     print(f"Generated {outfile_path}")
 
+    # --- GENERATE OVERRIDES WXL ---
+    # This file changes the standard WiX UI Text
+    with open(overrides_path, "w", encoding="utf-8") as wxl:
+        wxl.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        wxl.write('<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">\n')
+        
+        # 1. Change "Setup Wizard" to "Installer"
+        wxl.write(f'    <String Id="WelcomeDlgTitle">{{\\WixUI_Font_Title}}Welcome to the {escape_xml(product_name)} Installer</String>\n')
+        wxl.write(f'    <String Id="WelcomeDlgDescription">The installer will guide you through the steps required to install {escape_xml(product_name)} on your computer.</String>\n')
+        
+        wxl.write('</WixLocalization>\n')
+    
+    print(f"Generated {overrides_path} (IMPORTANT: Include this in your light.exe command with '-loc packaging/overrides.wxl')")
+
     generate_vbs("packaging/downgrade_warn.vbs")
 
+# (Helper functions same as before)
 def generate_vbs(vbs_path):
     with open(vbs_path, "w") as vbs:
         vbs.write("""
