@@ -4,18 +4,13 @@ import uuid
 import hashlib
 from pathlib import Path
 
-# Helper to generate stable GUIDs based on file paths
+# Helper to generate stable GUIDs
 NAMESPACE_GUID = uuid.UUID('12345678-1234-5678-1234-567812345678')
 
 def get_guid(string_input):
-    """Generates a standard UUID (e.g. DDC3F9...) for the Guid attribute."""
     return str(uuid.uuid5(NAMESPACE_GUID, string_input)).upper()
 
 def get_wix_id(string_input):
-    """
-    Generates a valid WiX Identifier for the Id attribute.
-    Rules: Must start with letter/underscore, no hyphens.
-    """
     hash_object = hashlib.md5(string_input.encode('utf-8'))
     return "ID_" + hash_object.hexdigest().upper()
 
@@ -23,7 +18,7 @@ def escape_xml(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 def main():
-    # 1. Setup & Environment Variables
+    # 1. Setup
     temp_dir = "./windowstmp"
     os.makedirs(temp_dir, exist_ok=True)
     
@@ -33,7 +28,6 @@ def main():
     publisher = os.getenv("COMPANY_NAME", "MyCompany")
     artifact_name = os.getenv("ARTIFACT_NAME", "Installer")
     
-    # Determine Architecture
     is_arm = "arm" in artifact_name.lower()
     platform_val = "arm64" if is_arm else "x64"
     program_files_folder = "ProgramFiles64Folder" 
@@ -42,7 +36,7 @@ def main():
     os.makedirs(os.path.dirname(outfile_path), exist_ok=True)
     f = open(outfile_path, "w", encoding="utf-8")
 
-    # 2. Write WiX Header
+    # 2. Header
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     f.write(f'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">\n')
     
@@ -51,62 +45,27 @@ def main():
     f.write(f'    <Product Id="*" Name="{escape_xml(product_name)}" Language="1033" Version="{version}" Manufacturer="{escape_xml(publisher)}" UpgradeCode="{upgrade_code}">\n')
     f.write(f'        <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="{platform_val}" />\n')
     f.write(f'        <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />\n')
-
     f.write(f'        <MediaTemplate EmbedCab="yes" />\n')
 
-    # -------------------------------------------------------------------------
-    # 3. DETECT if a newer version exists (for our custom warning)
-    #    We need to know if we are downgrading so we can trigger the popup.
-    # -------------------------------------------------------------------------
+    # 3. Upgrade Detection (Fixing ICE61)
+    # We only use this to detect if a newer version is present for the popup.
+    # We add 'IncludeMaximum' to avoid overlap confusion, though MajorUpgrade handles the actual logic.
     f.write(f'        <Upgrade Id="{upgrade_code}">\n')
     f.write(f'            <UpgradeVersion Minimum="{version}" IncludeMinimum="no" OnlyDetect="yes" Property="NEWER_VERSION_DETECTED" />\n')
     f.write(f'        </Upgrade>\n')
 
-    # 4. DEFINE THE WARNING POPUP (VBScript)
-    #    This runs a simple message box. If the user clicks "Cancel" (2), installation stops.
+    # 4. Custom Warning Action
     f.write('        <Binary Id="DowngradeWarningScript" SourceFile="packaging/downgrade_warn.vbs" />\n')
     f.write('        <CustomAction Id="CA_WarnDowngrade" BinaryKey="DowngradeWarningScript" VBScriptCall="Main" />\n')
-    
-    # 5. TRIGGER THE POPUP
-    #    Only run this in the UI Sequence, and ONLY if we detected a newer version.
     f.write('        <InstallUISequence>\n')
     f.write('            <Custom Action="CA_WarnDowngrade" After="AppSearch">NEWER_VERSION_DETECTED</Custom>\n')
     f.write('        </InstallUISequence>\n')
 
-    # --- UI Configuration & EULA Logic ---
-    f.write('        <UIRef Id="WixUI_FeatureTree" />\n')
+    # --- Directory Structure ---
+    company_dir_id = "CompanyDIR"
     
-    eula_path = "packaging/EULA.rtf"
-    readme_path = "packaging/Readme.rtf"
-    license_file = None
-
-    # Logic: Prefer EULA, fall back to Readme, fall back to generic generated RTF
-    if os.path.exists(eula_path):
-        license_file = eula_path
-    elif os.path.exists(readme_path):
-        print("No EULA found. Using Readme.rtf as License text.")
-        license_file = readme_path
-    else:
-        # Generate a dummy RTF to prevent the "Strange" default WiX text
-        print("No EULA or Readme found. Generating generic license file.")
-        license_file = os.path.join(temp_dir, "GenericLicense.rtf")
-        with open(license_file, "w") as lf:
-            lf.write(r"{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}\viewkind4\uc1\pard\sa200\sl276\slmult1\f0\fs22\lang9 No EULA provided for this software.\par}")
-
-    # Set the variable. This forces the UI to use OUR file, not the default.
-    f.write(f'        <WixVariable Id="WixUILicenseRtf" Value="{license_file}" />\n')
-    
-    # Optional: Set the banner images if you have them (mimicking Inno Setup icons)
-    # if os.path.exists("packaging/installer_top.bmp"):
-    #     f.write(r'        <WixVariable Id="WixUIBannerBmp" Value="packaging/installer_top.bmp" />')
-    # if os.path.exists("packaging/installer_side.bmp"):
-    #     f.write(r'        <WixVariable Id="WixUIDialogBmp" Value="packaging/installer_side.bmp" />')
-
-    # 3. Define Directory Structure
     f.write('        <Directory Id="TARGETDIR" Name="SourceDir">\n')
     f.write(f'            <Directory Id="{program_files_folder}">\n')
-    
-    # --- Common Files (VST3, AAX, LV2, CLAP) ---
     f.write('                <Directory Id="CommonFiles64Folder">\n')
     f.write('                    <Directory Id="VST3DIR" Name="VST3" />\n')
     f.write('                    <Directory Id="CLAPDIR" Name="CLAP" />\n')
@@ -117,20 +76,20 @@ def main():
     f.write('                        </Directory>\n')
     f.write('                    </Directory>\n')
     f.write('                </Directory>\n') 
-
-    f.write(f'                <Directory Id="CompanyDIR" Name="ZLAudio" />\n') 
+    f.write(f'                <Directory Id="{company_dir_id}" Name="ZLAudio" />\n') 
     f.write('            </Directory>\n') 
     f.write('        </Directory>\n') 
 
-    # 4. Harvest Files and Generate Components
+    # --- Harvest & Features ---
     features = {} 
+    found_formats = [] 
     
     formats = [
         ("VST3", "vst3", "VST3DIR", True),
         ("CLAP", "clap", "CLAPDIR", True),
         ("AAX", "aaxplugin", "AAXDIR", True),
         ("LV2", "lv2", "LV2DIR", True),
-        ("Standalone", "exe", "CompanyDIR", False) 
+        ("Standalone", "exe", company_dir_id, False) 
     ]
 
     for fmt_name, ext, parent_dir_id, is_bundle_config in formats:
@@ -145,10 +104,14 @@ def main():
 
         print(f"Harvesting {fmt_name} from {source_path}...")
         
-        feature_id = f"Feature_{fmt_name}"
-        features[feature_id] = {"title": f"{fmt_name} Plugin", "components": []}
+        # 1. Define Property (Checkbox)
+        checkbox_prop = f"INSTALL_{fmt_name.upper()}"
+        f.write(f'        <Property Id="{checkbox_prop}" Value="1" />\n')
+        found_formats.append((fmt_name, checkbox_prop))
 
-        f.write(f'        \n')
+        feature_id = f"Feature_{fmt_name}"
+        features[feature_id] = {"title": f"{fmt_name}", "components": [], "property": checkbox_prop}
+
         f.write(f'        <DirectoryRef Id="{parent_dir_id}">\n')
 
         is_actually_file = os.path.isfile(source_path)
@@ -157,18 +120,15 @@ def main():
         if use_bundle_logic:
             bundle_dir_name = f"{product_name}.{ext}"
             bundle_dir_id = get_wix_id(f"DIR_{fmt_name}_BUNDLE")
-            
             f.write(f'            <Directory Id="{bundle_dir_id}" Name="{bundle_dir_name}">\n')
             write_dir_recursive(f, source_path, bundle_dir_id, features[feature_id]["components"], fmt_name)
             f.write('            </Directory>\n')
-        
         else:
             if is_actually_file:
                 comp_id = get_wix_id(f"COMP_{fmt_name}_FILE")
                 file_id = get_wix_id(f"FILE_{fmt_name}_FILE")
                 features[feature_id]["components"].append(comp_id)
                 target_name = f"{product_name}.{ext}"
-                
                 f.write(f'            <Component Id="{comp_id}" Guid="{get_guid(comp_id)}" Win64="yes">\n')
                 f.write(f'                <File Id="{file_id}" Source="{source_path}" Name="{target_name}" KeyPath="yes" />\n')
                 f.write('            </Component>\n')
@@ -177,34 +137,92 @@ def main():
 
         f.write('        </DirectoryRef>\n')
 
-    # 5. Define Features
+    # --- Write Features ---
     f.write('        <Feature Id="Complete" Title="Complete Installation" Display="expand" Level="1" ConfigurableDirectory="TARGETDIR">\n')
     for feat_id, data in features.items():
         if not data["components"]: continue 
+        # 2. Condition Feature based on Checkbox (Level 0 = Disabled)
         f.write(f'            <Feature Id="{feat_id}" Title="{data["title"]}" Level="1">\n')
+        f.write(f'                <Condition Level="0"><![CDATA[{data["property"]} <> "1"]]></Condition>\n')
         for comp_id in data["components"]:
             f.write(f'                <ComponentRef Id="{comp_id}" />\n')
         f.write(f'            </Feature>\n')
     f.write('        </Feature>\n')
+
+    # --- UI Logic ---
+    eula_path = "packaging/EULA.rtf"
+    readme_path = "packaging/Readme.rtf"
+    license_file = None
+
+    if os.path.exists(eula_path): license_file = eula_path
+    elif os.path.exists(readme_path): license_file = readme_path
+    else:
+        license_file = os.path.join(temp_dir, "GenericLicense.rtf")
+        with open(license_file, "w") as lf:
+            lf.write(r"{\rtf1\ansi No EULA provided.\par}")
+
+    f.write(f'        <WixVariable Id="WixUILicenseRtf" Value="{license_file}" />\n')
+    f.write(f'        <Property Id="WIXUI_INSTALLDIR" Value="{company_dir_id}" />\n')
+
+    # --- UI Injection (Fixing ICE20) ---
+    f.write('        <UI>\n')
+    # Use standard InstallDir logic (Provides ErrorDialog, FatalError, etc automatically)
+    f.write('            <UIRef Id="WixUI_InstallDir" />\n')
+    f.write('            <UIRef Id="WixUI_ErrorProgressText" />\n')
+
+    # Define Custom Dialog
+    f.write('            <Dialog Id="PluginSelectDlg" Width="370" Height="270" Title="Select Components">\n')
+    f.write('                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Next">\n')
+    f.write('                    <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>\n')
+    f.write('                </Control>\n')
+    f.write('                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">\n')
+    f.write('                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>\n')
+    f.write('                </Control>\n')
+    f.write('                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">\n')
+    f.write('                    <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>\n')
+    f.write('                </Control>\n')
+    
+    f.write('                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Select the plugin formats you wish to install:" />\n')
+    f.write('                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\\WixUI_Font_Title}Select Components" />\n')
+    f.write('                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />\n')
+    f.write('                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />\n')
+    f.write('                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />\n')
+
+    current_y = 60
+    for fmt_name, prop_name in found_formats:
+        f.write(f'                <Control Id="Chk_{fmt_name}" Type="CheckBox" X="25" Y="{current_y}" Width="200" Height="17" Property="{prop_name}" CheckBoxValue="1" Text="Install {fmt_name}" />\n')
+        current_y += 20
+        
+    f.write('            </Dialog>\n')
+
+    # --- THE OVERRIDES ---
+    # We use Order="5" to force these actions to take precedence over the default WixUI_InstallDir actions.
+    
+    # 1. On InstallDirDlg "Next", go to PluginSelectDlg (Instead of VerifyReady)
+    f.write('            <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="PluginSelectDlg" Order="5">1</Publish>\n')
+    
+    # 2. On VerifyReadyDlg "Back", go to PluginSelectDlg (Instead of InstallDir)
+    f.write('            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="PluginSelectDlg" Order="5">1</Publish>\n')
+    
+    f.write('        </UI>\n')
 
     f.write('    </Product>\n')
     f.write('</Wix>\n')
     f.close()
     print(f"Generated {outfile_path}")
 
-    vbs_path = "packaging/downgrade_warn.vbs"
+    generate_vbs("packaging/downgrade_warn.vbs")
+
+def generate_vbs(vbs_path):
     with open(vbs_path, "w") as vbs:
         vbs.write("""
 Function Main()
     Dim result
-    ' MsgBox(Prompt, Buttons+Icon, Title)
-    ' 1 = OK/Cancel, 48 = Warning Icon
-    result = MsgBox("You are installing an older version of this product. This effectively downgrades the installation. Do you want to continue?", 49, "Downgrade Warning")
-    
-    If result = 2 Then ' 2 is Cancel
-        Main = 1602 ' User Cancelled Error Code
+    result = MsgBox("You are installing an older version of this product. Do you want to continue?", 49, "Downgrade Warning")
+    If result = 2 Then 
+        Main = 1602 
     Else
-        Main = 1 ' Success
+        Main = 1
     End If
 End Function
 """)
