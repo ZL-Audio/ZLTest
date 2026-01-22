@@ -2,7 +2,6 @@ import os
 import sys
 import uuid
 import hashlib
-import subprocess
 from pathlib import Path
 
 # Helper to generate stable GUIDs based on file paths
@@ -16,10 +15,8 @@ def get_wix_id(string_input):
     """
     Generates a valid WiX Identifier for the Id attribute.
     Rules: Must start with letter/underscore, no hyphens.
-    We use MD5 to ensure uniqueness and stability, prefixed with 'ID_'.
     """
     hash_object = hashlib.md5(string_input.encode('utf-8'))
-    # Hexdigest is alphanumeric (0-9, a-f). We prefix with 'ID_' to ensure it starts with a letter.
     return "ID_" + hash_object.hexdigest().upper()
 
 def escape_xml(s):
@@ -49,7 +46,6 @@ def main():
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     f.write(f'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">\n')
     
-    # Generate Product GUID and UpgradeCode
     upgrade_code = get_guid(f"{project_name}_UpgradeCode") 
 
     f.write(f'    <Product Id="*" Name="{escape_xml(product_name)}" Language="1033" Version="{version}" Manufacturer="{escape_xml(publisher)}" UpgradeCode="{upgrade_code}">\n')
@@ -57,9 +53,34 @@ def main():
     f.write('        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />\n')
     f.write('        <MediaTemplate EmbedCab="yes" />\n')
 
+    # --- UI Configuration & EULA Logic ---
     f.write('        <UIRef Id="WixUI_FeatureTree" />\n')
-    if os.path.exists("packaging/EULA.rtf"):
-        f.write('        <WixVariable Id="WixUILicenseRtf" Value="packaging/EULA.rtf" />\n')
+    
+    eula_path = "packaging/EULA.rtf"
+    readme_path = "packaging/Readme.rtf"
+    license_file = None
+
+    # Logic: Prefer EULA, fall back to Readme, fall back to generic generated RTF
+    if os.path.exists(eula_path):
+        license_file = eula_path
+    elif os.path.exists(readme_path):
+        print("No EULA found. Using Readme.rtf as License text.")
+        license_file = readme_path
+    else:
+        # Generate a dummy RTF to prevent the "Strange" default WiX text
+        print("No EULA or Readme found. Generating generic license file.")
+        license_file = os.path.join(temp_dir, "GenericLicense.rtf")
+        with open(license_file, "w") as lf:
+            lf.write(r"{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}\viewkind4\uc1\pard\sa200\sl276\slmult1\f0\fs22\lang9 No EULA provided for this software.\par}")
+
+    # Set the variable. This forces the UI to use OUR file, not the default.
+    f.write(f'        <WixVariable Id="WixUILicenseRtf" Value="{license_file}" />\n')
+    
+    # Optional: Set the banner images if you have them (mimicking Inno Setup icons)
+    # if os.path.exists("packaging/installer_top.bmp"):
+    #     f.write(r'        <WixVariable Id="WixUIBannerBmp" Value="packaging/installer_top.bmp" />')
+    # if os.path.exists("packaging/installer_side.bmp"):
+    #     f.write(r'        <WixVariable Id="WixUIDialogBmp" Value="packaging/installer_side.bmp" />')
 
     # 3. Define Directory Structure
     f.write('        <Directory Id="TARGETDIR" Name="SourceDir">\n')
@@ -67,19 +88,15 @@ def main():
     
     # --- Common Files (VST3, AAX, LV2, CLAP) ---
     f.write('                <Directory Id="CommonFiles64Folder">\n')
-    
     f.write('                    <Directory Id="VST3DIR" Name="VST3" />\n')
     f.write('                    <Directory Id="CLAPDIR" Name="CLAP" />\n')
     f.write('                    <Directory Id="LV2DIR" Name="LV2" />\n')
-    
     f.write('                    <Directory Id="AvidDir" Name="Avid">\n')
     f.write('                        <Directory Id="AudioDir" Name="Audio">\n')
     f.write('                            <Directory Id="AAXDIR" Name="Plug-Ins" />\n')
     f.write('                        </Directory>\n')
     f.write('                    </Directory>\n')
-    
     f.write('                </Directory>\n') 
-    # -------------------------------------------
 
     f.write(f'                <Directory Id="CompanyDIR" Name="ZLAudio" />\n') 
     f.write('            </Directory>\n') 
@@ -88,7 +105,6 @@ def main():
     # 4. Harvest Files and Generate Components
     features = {} 
     
-    # Configuration: (EnvVar, Extension, ParentDirID, IsBundleDefaultsToTrue)
     formats = [
         ("VST3", "vst3", "VST3DIR", True),
         ("CLAP", "clap", "CLAPDIR", True),
@@ -115,30 +131,21 @@ def main():
         f.write(f'        \n')
         f.write(f'        <DirectoryRef Id="{parent_dir_id}">\n')
 
-        # SMART CHECK: Single file vs Directory
         is_actually_file = os.path.isfile(source_path)
         use_bundle_logic = is_bundle_config and not is_actually_file
 
         if use_bundle_logic:
-            # --- BUNDLE LOGIC ---
             bundle_dir_name = f"{product_name}.{ext}"
-            # Use get_wix_id for Directory ID
             bundle_dir_id = get_wix_id(f"DIR_{fmt_name}_BUNDLE")
             
             f.write(f'            <Directory Id="{bundle_dir_id}" Name="{bundle_dir_name}">\n')
-            
-            # Pass 'f' (the file object) to the function
             write_dir_recursive(f, source_path, bundle_dir_id, features[feature_id]["components"], fmt_name)
-
             f.write('            </Directory>\n')
         
         else:
-            # --- SINGLE FILE LOGIC ---
             if is_actually_file:
-                # Generate valid IDs
                 comp_id = get_wix_id(f"COMP_{fmt_name}_FILE")
                 file_id = get_wix_id(f"FILE_{fmt_name}_FILE")
-                
                 features[feature_id]["components"].append(comp_id)
                 target_name = f"{product_name}.{ext}"
                 
@@ -146,7 +153,6 @@ def main():
                 f.write(f'                <File Id="{file_id}" Source="{source_path}" Name="{target_name}" KeyPath="yes" />\n')
                 f.write('            </Component>\n')
             else:
-                # Folder but not a bundle (Standalone folder)
                 write_dir_recursive(f, source_path, parent_dir_id, features[feature_id]["components"], fmt_name)
 
         f.write('        </DirectoryRef>\n')
@@ -176,29 +182,21 @@ def write_dir_recursive(file_handle, current_os_path, parent_wix_id, component_l
     dirs = [i for i in items if os.path.isdir(os.path.join(current_os_path, i))]
     files = [f for f in files if not f.endswith(".ilk")]
 
-    # Write Files
     for filename in files:
         full_path = os.path.join(current_os_path, filename)
-        
-        # Unique IDs
         file_id = get_wix_id(f"FILE_{prefix}_{full_path}")
         comp_id = get_wix_id(f"COMP_{prefix}_{full_path}")
-        
         component_list.append(comp_id)
         
-        # Use file_handle instead of f
         file_handle.write(f'                <Component Id="{comp_id}" Guid="{get_guid(comp_id)}" Win64="yes">\n')
         file_handle.write(f'                    <File Id="{file_id}" Source="{full_path}" KeyPath="yes" />\n')
         file_handle.write(f'                </Component>\n')
 
-    # Recurse Dirs
     for dirname in dirs:
         full_path = os.path.join(current_os_path, dirname)
-        
         dir_id = get_wix_id(f"DIR_{prefix}_{full_path}")
         clean_dirname = escape_xml(dirname)
         
-        # Use file_handle instead of f
         file_handle.write(f'                <Directory Id="{dir_id}" Name="{clean_dirname}">\n')
         write_dir_recursive(file_handle, full_path, dir_id, component_list, prefix)
         file_handle.write(f'                </Directory>\n')
