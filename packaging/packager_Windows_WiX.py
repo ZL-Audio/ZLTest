@@ -32,7 +32,7 @@ def main():
     program_files_folder = "ProgramFiles64Folder" 
 
     outfile_path = "packaging/installer.wxs"
-    overrides_path = "packaging/overrides.wxl" # NEW FILE
+    overrides_path = "packaging/overrides.wxl"
     
     os.makedirs(os.path.dirname(outfile_path), exist_ok=True)
     f = open(outfile_path, "w", encoding="utf-8")
@@ -47,6 +47,15 @@ def main():
     f.write(f'        <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="{platform_val}" />\n')
     f.write(f'        <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />\n')
     f.write(f'        <MediaTemplate EmbedCab="yes" />\n')
+
+    # --- KEY CHANGE: Add/Remove Programs Icon ---
+    icon_path = "packaging/icon.ico"
+    if os.path.exists(icon_path):
+        print(f"Found icon: {icon_path}")
+        # We must copy the icon into the MSI binary table
+        f.write(f'        <Icon Id="AppIcon.ico" SourceFile="{icon_path}" />\n')
+        # We tell Windows to use this icon for the Add/Remove programs list
+        f.write('        <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />\n')
 
     # 3. Upgrade Detection
     f.write(f'        <Upgrade Id="{upgrade_code}">\n')
@@ -135,7 +144,6 @@ def main():
 
         f.write('        </DirectoryRef>\n')
 
-    # --- Write Features ---
     f.write('        <Feature Id="Complete" Title="Complete Installation" Display="expand" Level="1" ConfigurableDirectory="TARGETDIR">\n')
     for feat_id, data in features.items():
         if not data["components"]: continue 
@@ -157,15 +165,26 @@ def main():
         license_file = os.path.join(temp_dir, "GenericLicense.rtf")
         with open(license_file, "w") as lf:
             lf.write(r"{\rtf1\ansi No EULA provided.\par}")
-
     f.write(f'        <WixVariable Id="WixUILicenseRtf" Value="{license_file}" />\n')
+
+    # --- CUSTOM IMAGES ---
+    banner_bmp = "packaging/banner.bmp"
+    if os.path.exists(banner_bmp):
+         print(f"Found banner image: {banner_bmp}")
+         f.write(f'        <WixVariable Id="WixUIBannerBmp" Value="{banner_bmp}" />\n')
+
+    dialog_bmp = "packaging/dialog.bmp"
+    if os.path.exists(dialog_bmp):
+         print(f"Found dialog image: {dialog_bmp}")
+         f.write(f'        <WixVariable Id="WixUIDialogBmp" Value="{dialog_bmp}" />\n')
+
     f.write(f'        <Property Id="WIXUI_INSTALLDIR" Value="{company_dir_id}" />\n')
 
     f.write('        <UI>\n')
     f.write('            <UIRef Id="WixUI_InstallDir" />\n')
     f.write('            <UIRef Id="WixUI_ErrorProgressText" />\n')
 
-    # Define Custom Dialog
+    # Custom Dialog
     f.write('            <Dialog Id="PluginSelectDlg" Width="370" Height="270" Title="Select Components">\n')
     f.write('                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Next">\n')
     f.write('                    <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>\n')
@@ -173,13 +192,11 @@ def main():
     f.write('                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">\n')
     f.write('                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>\n')
     f.write('                </Control>\n')
-    
-    # Back button goes to License
     f.write('                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">\n')
     f.write('                    <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>\n')
     f.write('                </Control>\n')
     
-    f.write('                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Select the plugin formats you wish to install:" />\n')
+    f.write('                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Select the formats you want to install:" />\n')
     f.write('                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\\WixUI_Font_Title}Select Components" />\n')
     f.write('                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />\n')
     f.write('                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />\n')
@@ -187,15 +204,12 @@ def main():
 
     current_y = 60
     for fmt_name, prop_name in found_formats:
-        f.write(f'                <Control Id="Chk_{fmt_name}" Type="CheckBox" X="25" Y="{current_y}" Width="200" Height="17" Property="{prop_name}" CheckBoxValue="1" Text="Install {fmt_name}" />\n')
+        f.write(f'                <Control Id="Chk_{fmt_name}" Type="CheckBox" X="25" Y="{current_y}" Width="200" Height="17" Property="{prop_name}" CheckBoxValue="1" Text="{fmt_name}" />\n')
         current_y += 20
         
     f.write('            </Dialog>\n')
 
-    # Rewire License -> PluginSelect
     f.write('            <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="PluginSelectDlg" Order="5">LicenseAccepted = "1"</Publish>\n')
-    
-    # Rewire VerifyReady -> PluginSelect
     f.write('            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="PluginSelectDlg" Order="5">1</Publish>\n')
     
     f.write('        </UI>\n')
@@ -205,23 +219,17 @@ def main():
     f.close()
     print(f"Generated {outfile_path}")
 
-    # --- GENERATE OVERRIDES WXL ---
-    # This file changes the standard WiX UI Text
+    # --- OVERRIDES WXL ---
     with open(overrides_path, "w", encoding="utf-8") as wxl:
         wxl.write('<?xml version="1.0" encoding="utf-8"?>\n')
         wxl.write('<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">\n')
-        
-        # 1. Change "Setup Wizard" to "Installer"
         wxl.write(f'    <String Id="WelcomeDlgTitle">{{\\WixUI_Font_Title}}Welcome to the {escape_xml(product_name)} Installer</String>\n')
         wxl.write(f'    <String Id="WelcomeDlgDescription">The installer will guide you through the steps required to install {escape_xml(product_name)} on your computer.</String>\n')
-        
         wxl.write('</WixLocalization>\n')
     
-    print(f"Generated {overrides_path} (IMPORTANT: Include this in your light.exe command with '-loc packaging/overrides.wxl')")
-
+    print(f"Generated {overrides_path} (Include in light.exe with '-loc')")
     generate_vbs("packaging/downgrade_warn.vbs")
 
-# (Helper functions same as before)
 def generate_vbs(vbs_path):
     with open(vbs_path, "w") as vbs:
         vbs.write("""
