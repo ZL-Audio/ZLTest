@@ -1,4 +1,4 @@
-name: macOS/Windows/Linux Test
+name: Windows WiX Test
 
 on:
   push:
