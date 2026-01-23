@@ -25,12 +25,9 @@ def main():
     product_name = os.getenv("PRODUCT_NAME", "Pamplejuce Demo")
     version = os.getenv("VERSION", "0.0.0")
     publisher = os.getenv("COMPANY_NAME", "MyCompany")
-    artifact_name = os.getenv("ARTIFACT_NAME", "Installer")
     
-    is_arm = "arm" in artifact_name.lower()
-    platform_val = "arm64" if is_arm else "x64"
-    program_files_folder = "ProgramFiles64Folder" 
-
+    # WiX v5 requires build-time arch flags (-arch x64), so we don't hardcode Platform here.
+    
     outfile_path = "packaging/installer.wxs"
     overrides_path = "packaging/overrides.wxl"
     
@@ -38,57 +35,47 @@ def main():
     f = open(outfile_path, "w", encoding="utf-8")
 
     # 2. Header
-    f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    f.write(f'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">\n')
+    f.write('<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">\n')
     
     upgrade_code = get_guid(f"{project_name}_UpgradeCode") 
 
-    f.write(f'    <Product Id="*" Name="{escape_xml(product_name)}" Language="1033" Version="{version}" Manufacturer="{escape_xml(publisher)}" UpgradeCode="{upgrade_code}">\n')
-    f.write(f'        <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="{platform_val}" />\n')
-    f.write(f'        <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />\n')
+    # 3. Package
+    f.write(f'    <Package Name="{escape_xml(product_name)}" Manufacturer="{escape_xml(publisher)}" Version="{version}" UpgradeCode="{upgrade_code}" Scope="perMachine" Compressed="yes">\n')
+    
+    # Downgrade logic: We let MajorUpgrade handle it natively.
+    # "Disallow" prevents downgrades and shows a default message.
+    f.write(f'        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." Schedule="afterInstallInitialize" />\n')
     f.write(f'        <MediaTemplate EmbedCab="yes" />\n')
 
-    # --- KEY CHANGE: Add/Remove Programs Icon ---
+    # Icon
     icon_path = "packaging/icon.ico"
     if os.path.exists(icon_path):
         print(f"Found icon: {icon_path}")
-        # We must copy the icon into the MSI binary table
         f.write(f'        <Icon Id="AppIcon.ico" SourceFile="{icon_path}" />\n')
-        # We tell Windows to use this icon for the Add/Remove programs list
         f.write('        <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />\n')
 
-    # 3. Upgrade Detection
-    f.write(f'        <Upgrade Id="{upgrade_code}">\n')
-    f.write(f'            <UpgradeVersion Minimum="{version}" IncludeMinimum="no" OnlyDetect="yes" Property="NEWER_VERSION_DETECTED" />\n')
-    f.write(f'        </Upgrade>\n')
-
-    # 4. Custom Warning Action
-    f.write('        <Binary Id="DowngradeWarningScript" SourceFile="packaging/downgrade_warn.vbs" />\n')
-    f.write('        <CustomAction Id="CA_WarnDowngrade" BinaryKey="DowngradeWarningScript" VBScriptCall="Main" />\n')
-    f.write('        <InstallUISequence>\n')
-    f.write('            <Custom Action="CA_WarnDowngrade" After="AppSearch">NEWER_VERSION_DETECTED</Custom>\n')
-    f.write('        </InstallUISequence>\n')
-
-    # --- Directory Structure ---
-    company_dir_id = "CompanyDIR"
+    # 4. Directory Structure
+    # FIX: CompanyDIR must be uppercase (COMPANYDIR) to be a public property for ConfigurableDirectory
+    company_dir_id = "COMPANYDIR"
     
-    f.write('        <Directory Id="TARGETDIR" Name="SourceDir">\n')
-    f.write(f'            <Directory Id="{program_files_folder}">\n')
-    f.write('                <Directory Id="CommonFiles64Folder">\n')
-    f.write('                    <Directory Id="VST3DIR" Name="VST3" />\n')
-    f.write('                    <Directory Id="CLAPDIR" Name="CLAP" />\n')
-    f.write('                    <Directory Id="LV2DIR" Name="LV2" />\n')
-    f.write('                    <Directory Id="AvidDir" Name="Avid">\n')
-    f.write('                        <Directory Id="AudioDir" Name="Audio">\n')
-    f.write('                            <Directory Id="AAXDIR" Name="Plug-Ins" />\n')
-    f.write('                        </Directory>\n')
-    f.write('                    </Directory>\n')
-    f.write('                </Directory>\n') 
-    f.write(f'                <Directory Id="{company_dir_id}" Name="ZLAudio" />\n') 
-    f.write('            </Directory>\n') 
-    f.write('        </Directory>\n') 
+    # FIX: CommonFiles64Folder is a StandardDirectory, not a child of ProgramFiles64Folder
+    f.write('        <StandardDirectory Id="CommonFiles64Folder">\n')
+    f.write('            <Directory Id="VST3DIR" Name="VST3" />\n')
+    f.write('            <Directory Id="CLAPDIR" Name="CLAP" />\n')
+    f.write('            <Directory Id="LV2DIR" Name="LV2" />\n')
+    f.write('            <Directory Id="AvidDir" Name="Avid">\n')
+    f.write('                <Directory Id="AudioDir" Name="Audio">\n')
+    f.write('                    <Directory Id="AAXDIR" Name="Plug-Ins" />\n')
+    f.write('                </Directory>\n')
+    f.write('            </Directory>\n')
+    f.write('        </StandardDirectory>\n')
 
-    # --- Harvest & Features ---
+    # FIX: We use ProgramFiles64Folder purely to root our company dir
+    f.write('        <StandardDirectory Id="ProgramFiles64Folder">\n')
+    f.write(f'            <Directory Id="{company_dir_id}" Name="ZLAudio" />\n') 
+    f.write('        </StandardDirectory>\n') 
+
+    # 5. Harvest & Features
     features = {} 
     found_formats = [] 
     
@@ -136,7 +123,7 @@ def main():
                 file_id = get_wix_id(f"FILE_{fmt_name}_FILE")
                 features[feature_id]["components"].append(comp_id)
                 target_name = f"{product_name}.{ext}"
-                f.write(f'            <Component Id="{comp_id}" Guid="{get_guid(comp_id)}" Win64="yes">\n')
+                f.write(f'            <Component Id="{comp_id}" Guid="{get_guid(comp_id)}">\n')
                 f.write(f'                <File Id="{file_id}" Source="{source_path}" Name="{target_name}" KeyPath="yes" />\n')
                 f.write('            </Component>\n')
             else:
@@ -144,11 +131,18 @@ def main():
 
         f.write('        </DirectoryRef>\n')
 
-    f.write('        <Feature Id="Complete" Title="Complete Installation" Display="expand" Level="1" ConfigurableDirectory="TARGETDIR">\n')
+    # FIX: ConfigurableDirectory must be the uppercase ID "COMPANYDIR"
+    f.write(f'        <Feature Id="Complete" Title="Complete Installation" Display="expand" Level="1" ConfigurableDirectory="{company_dir_id}">\n')
+    
     for feat_id, data in features.items():
         if not data["components"]: continue 
+        # FIX: <Condition> is not valid as a child. 
+        # In WiX v5/v4, we use the Level element to conditionally set the level to 0 (disabled) or 1 (enabled).
         f.write(f'            <Feature Id="{feat_id}" Title="{data["title"]}" Level="1">\n')
-        f.write(f'                <Condition Level="0"><![CDATA[{data["property"]} <> "1"]]></Condition>\n')
+        
+        # If Property != 1, set Level to 0 (Disabled)
+        f.write(f'                <Level Value="0" Condition="{data["property"]} &lt;&gt; &quot;1&quot;" />\n')
+        
         for comp_id in data["components"]:
             f.write(f'                <ComponentRef Id="{comp_id}" />\n')
         f.write(f'            </Feature>\n')
@@ -165,9 +159,9 @@ def main():
         license_file = os.path.join(temp_dir, "GenericLicense.rtf")
         with open(license_file, "w") as lf:
             lf.write(r"{\rtf1\ansi No EULA provided.\par}")
+    
     f.write(f'        <WixVariable Id="WixUILicenseRtf" Value="{license_file}" />\n')
 
-    # --- CUSTOM IMAGES ---
     banner_bmp = "packaging/banner.bmp"
     if os.path.exists(banner_bmp):
          print(f"Found banner image: {banner_bmp}")
@@ -181,19 +175,19 @@ def main():
     f.write(f'        <Property Id="WIXUI_INSTALLDIR" Value="{company_dir_id}" />\n')
 
     f.write('        <UI>\n')
-    f.write('            <UIRef Id="WixUI_InstallDir" />\n')
+    f.write('            <ui:WixUI Id="WixUI_InstallDir" />\n')
     f.write('            <UIRef Id="WixUI_ErrorProgressText" />\n')
 
     # Custom Dialog
     f.write('            <Dialog Id="PluginSelectDlg" Width="370" Height="270" Title="Select Components">\n')
     f.write('                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Next">\n')
-    f.write('                    <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>\n')
+    f.write('                    <Publish Event="NewDialog" Value="VerifyReadyDlg" />\n')
     f.write('                </Control>\n')
     f.write('                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">\n')
-    f.write('                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>\n')
+    f.write('                    <Publish Event="SpawnDialog" Value="CancelDlg" />\n')
     f.write('                </Control>\n')
     f.write('                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">\n')
-    f.write('                    <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>\n')
+    f.write('                    <Publish Event="NewDialog" Value="LicenseAgreementDlg" />\n')
     f.write('                </Control>\n')
     
     f.write('                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Select the formats you want to install:" />\n')
@@ -209,40 +203,27 @@ def main():
         
     f.write('            </Dialog>\n')
 
-    f.write('            <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="PluginSelectDlg" Order="5">LicenseAccepted = "1"</Publish>\n')
-    f.write('            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="PluginSelectDlg" Order="5">1</Publish>\n')
+    # Inject Dialog
+    f.write('            <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="PluginSelectDlg" Order="5" Condition="LicenseAccepted = &quot;1&quot;" />\n')
+    f.write('            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="PluginSelectDlg" Order="5" />\n')
     
     f.write('        </UI>\n')
 
-    f.write('    </Product>\n')
+    f.write('    </Package>\n')
     f.write('</Wix>\n')
     f.close()
     print(f"Generated {outfile_path}")
 
-    # --- OVERRIDES WXL ---
+    # --- OVERRIDES WXL (New Schema) ---
+    # FIX: Use Value="" attribute instead of inner text
     with open(overrides_path, "w", encoding="utf-8") as wxl:
         wxl.write('<?xml version="1.0" encoding="utf-8"?>\n')
-        wxl.write('<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">\n')
-        wxl.write(f'    <String Id="WelcomeDlgTitle">{{\\WixUI_Font_Title}}Welcome to the {escape_xml(product_name)} Installer</String>\n')
-        wxl.write(f'    <String Id="WelcomeDlgDescription">The installer will guide you through the steps required to install {escape_xml(product_name)} on your computer.</String>\n')
+        wxl.write('<WixLocalization Culture="en-us" xmlns="http://wixtoolset.org/schemas/v4/wxl">\n')
+        wxl.write(f'    <String Id="WelcomeDlgTitle" Value="{{\\WixUI_Font_Title}}Welcome to the {escape_xml(product_name)} Installer" />\n')
+        wxl.write(f'    <String Id="WelcomeDlgDescription" Value="The installer will guide you through the steps required to install {escape_xml(product_name)} on your computer." />\n')
         wxl.write('</WixLocalization>\n')
     
-    print(f"Generated {overrides_path} (Include in light.exe with '-loc')")
-    generate_vbs("packaging/downgrade_warn.vbs")
-
-def generate_vbs(vbs_path):
-    with open(vbs_path, "w") as vbs:
-        vbs.write("""
-Function Main()
-    Dim result
-    result = MsgBox("You are installing an older version of this product. Do you want to continue?", 49, "Downgrade Warning")
-    If result = 2 Then 
-        Main = 1602 
-    Else
-        Main = 1
-    End If
-End Function
-""")
+    print(f"Generated {overrides_path}")
 
 def write_dir_recursive(file_handle, current_os_path, parent_wix_id, component_list, prefix):
     try:
@@ -260,7 +241,7 @@ def write_dir_recursive(file_handle, current_os_path, parent_wix_id, component_l
         comp_id = get_wix_id(f"COMP_{prefix}_{full_path}")
         component_list.append(comp_id)
         
-        file_handle.write(f'                <Component Id="{comp_id}" Guid="{get_guid(comp_id)}" Win64="yes">\n')
+        file_handle.write(f'                <Component Id="{comp_id}" Guid="{get_guid(comp_id)}">\n')
         file_handle.write(f'                    <File Id="{file_id}" Source="{full_path}" KeyPath="yes" />\n')
         file_handle.write(f'                </Component>\n')
 
