@@ -37,10 +37,8 @@ def main():
     f.write(f'    <Package Name="{escape_xml(product_name)}" Manufacturer="{escape_xml(publisher)}" Version="{version}" UpgradeCode="{upgrade_code}" Scope="perMachine" Compressed="yes">\n')
     
     # --- Downgrade Logic ---
+    # AllowDowngrades="yes" permits the installer to overwrite a newer version with this older one without erroring.
     f.write(f'        <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />\n')
-    f.write(f'        <Upgrade Id="{upgrade_code}">\n')
-    f.write(f'            <UpgradeVersion Minimum="{version}" IncludeMinimum="no" OnlyDetect="yes" Property="DOWNGRADE_DETECTED" />\n')
-    f.write(f'        </Upgrade>\n')
 
     f.write(f'        <MediaTemplate EmbedCab="yes" />\n')
 
@@ -50,7 +48,7 @@ def main():
         f.write('        <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />\n')
 
     # --- Directory Structure ---
-    # These IDs (VST3DIR, COMPANYDIR, etc.) must be public (uppercase) to be configurable in the UI.
+    # Public IDs (uppercase) allow them to be modified by the UI
     company_dir_id = "COMPANYDIR"
     
     f.write('        <StandardDirectory Id="CommonFiles64Folder">\n')
@@ -79,7 +77,7 @@ def main():
         if not os.path.exists(source_path): continue
 
         feature_id = f"Feature_{fmt_name}"
-        # Store the parent_dir_id (e.g., VST3DIR) as the configurable directory for this feature
+        # Store the parent_dir_id (e.g., VST3DIR) to use as the ConfigurableDirectory
         features[feature_id] = {"title": f"{fmt_name}", "components": [], "config_dir": parent_dir_id}
 
         f.write(f'        <DirectoryRef Id="{parent_dir_id}">\n')
@@ -106,15 +104,15 @@ def main():
         f.write('        </DirectoryRef>\n')
 
     # --- Feature Definition ---
-    # We use a generic root feature. We do NOT set ConfigurableDirectory on the root.
-    # This ensures that when the user clicks the root, the browse button might be disabled (or default),
-    # but when they click a child (like VST3), the browse button updates to VST3DIR.
+    # The Root feature does not have a ConfigurableDirectory. 
+    # This forces the user to select the sub-features to change their specific paths.
     f.write(f'        <Feature Id="Complete" Title="Complete Installation" Display="expand" Level="1">\n')
     
     for feat_id, data in features.items():
         if not data["components"]: continue 
-        # KEY CHANGE: The ConfigurableDirectory attribute is applied here.
-        # This tells the standard WiX UI: "When this feature is selected in the tree, let the user browse to change THIS directory."
+        
+        # ConfigurableDirectory:
+        # When this feature is highlighted in the Feature Tree, the "Browse" button controls this directory.
         f.write(f'            <Feature Id="{feat_id}" Title="{data["title"]}" Level="1" ConfigurableDirectory="{data["config_dir"]}">\n')
         for comp_id in data["components"]:
             f.write(f'                <ComponentRef Id="{comp_id}" />\n')
@@ -140,34 +138,10 @@ def main():
     if os.path.exists(dialog_bmp):
          f.write(f'        <WixVariable Id="WixUIDialogBmp" Value="{dialog_bmp}" />\n')
 
-    # WixUI_FeatureTree is the standard UI that allows detailed feature configuration.
-    # It includes the "CustomizeDlg" which respects the ConfigurableDirectory attribute we set above.
+    # WixUI_FeatureTree is the native UI set that enables the "Customize" dialog (Feature Tree).
     f.write('        <UI>\n')
     f.write('            <ui:WixUI Id="WixUI_FeatureTree" />\n')
     f.write('            <UIRef Id="WixUI_ErrorProgressText" />\n')
-
-    # --- Downgrade Warning Dialog ---
-    # (Same as before - strictly necessary to handle the "AllowDowngrades" logic gracefully)
-    f.write('            <Dialog Id="DowngradeWarningDlg" Width="370" Height="270" Title="Downgrade Warning">\n')
-    f.write('                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\\WixUI_Font_Title}Downgrade Detected" />\n')
-    f.write('                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="A newer version of this product is already installed." />\n')
-    f.write('                <Control Id="Text" Type="Text" X="25" Y="60" Width="320" Height="60" Text="You are attempting to install version ' + version + '. Installing this version will downgrade your current installation. \n\nDo you want to continue?" />\n')
-    f.write('                <Control Id="Yes" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Yes">\n')
-    f.write('                    <Publish Event="NewDialog" Value="LicenseAgreementDlg" />\n')
-    f.write('                </Control>\n')
-    f.write('                <Control Id="No" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="No">\n')
-    f.write('                    <Publish Event="EndDialog" Value="Exit" />\n')
-    f.write('                </Control>\n')
-    f.write('                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />\n')
-    f.write('                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />\n')
-    f.write('                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />\n')
-    f.write('            </Dialog>\n')
-
-    # --- UI Injection ---
-    # Inject Downgrade Warning into the start of the sequence
-    f.write('            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="DowngradeWarningDlg" Order="1" Condition="DOWNGRADE_DETECTED" />\n')
-    f.write('            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg" Order="2" Condition="NOT DOWNGRADE_DETECTED" />\n')
-    
     f.write('        </UI>\n')
 
     f.write('    </Package>\n')
