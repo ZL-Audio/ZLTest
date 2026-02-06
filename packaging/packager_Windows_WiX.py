@@ -36,7 +36,7 @@ def main():
 
     f.write(f'    <Package Name="{escape_xml(product_name)}" Manufacturer="{escape_xml(publisher)}" Version="{version}" UpgradeCode="{upgrade_code}" Scope="perMachine" Compressed="yes">\n')
     
-    # --- Downgrade Detection ---
+    # --- Downgrade Logic ---
     f.write(f'        <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />\n')
     f.write(f'        <Upgrade Id="{upgrade_code}">\n')
     f.write(f'            <UpgradeVersion Minimum="{version}" IncludeMinimum="no" OnlyDetect="yes" Property="DOWNGRADE_DETECTED" />\n')
@@ -50,7 +50,9 @@ def main():
         f.write('        <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />\n')
 
     # --- Directory Structure ---
+    # These IDs (VST3DIR, COMPANYDIR, etc.) must be public (uppercase) to be configurable in the UI.
     company_dir_id = "COMPANYDIR"
+    
     f.write('        <StandardDirectory Id="CommonFiles64Folder">\n')
     f.write('            <Directory Id="VST3DIR" Name="VST3" />\n')
     f.write('            <Directory Id="CLAPDIR" Name="CLAP" />\n')
@@ -67,6 +69,7 @@ def main():
 
     # --- Harvest Logic ---
     features = {} 
+    # Tuple: (FormatName, Extension, DirectoryID, IsBundle)
     formats = [("VST3", "vst3", "VST3DIR", True), ("CLAP", "clap", "CLAPDIR", True), ("AAX", "aaxplugin", "AAXDIR", True), ("LV2", "lv2", "LV2DIR", True), ("Standalone", "exe", company_dir_id, False)]
 
     for fmt_name, ext, parent_dir_id, is_bundle_config in formats:
@@ -75,10 +78,9 @@ def main():
         source_path = os.environ[env_var]
         if not os.path.exists(source_path): continue
 
-        # Note: We no longer need manual properties for checkboxes. 
-        # The standard UI handles selection via the Feature Tree.
         feature_id = f"Feature_{fmt_name}"
-        features[feature_id] = {"title": f"{fmt_name}", "components": []}
+        # Store the parent_dir_id (e.g., VST3DIR) as the configurable directory for this feature
+        features[feature_id] = {"title": f"{fmt_name}", "components": [], "config_dir": parent_dir_id}
 
         f.write(f'        <DirectoryRef Id="{parent_dir_id}">\n')
         is_actually_file = os.path.isfile(source_path)
@@ -104,13 +106,16 @@ def main():
         f.write('        </DirectoryRef>\n')
 
     # --- Feature Definition ---
-    # ConfigurableDirectory allows the user to change the path for "COMPANYDIR" (Standalone app/resources)
-    f.write(f'        <Feature Id="Complete" Title="{escape_xml(product_name)}" Display="expand" Level="1" ConfigurableDirectory="{company_dir_id}">\n')
+    # We use a generic root feature. We do NOT set ConfigurableDirectory on the root.
+    # This ensures that when the user clicks the root, the browse button might be disabled (or default),
+    # but when they click a child (like VST3), the browse button updates to VST3DIR.
+    f.write(f'        <Feature Id="Complete" Title="Complete Installation" Display="expand" Level="1">\n')
+    
     for feat_id, data in features.items():
         if not data["components"]: continue 
-        # Removed the conditional Level logic. 
-        # Standard behavior: Level 1 (Install by default). User can deselect in UI.
-        f.write(f'            <Feature Id="{feat_id}" Title="{data["title"]}" Level="1">\n')
+        # KEY CHANGE: The ConfigurableDirectory attribute is applied here.
+        # This tells the standard WiX UI: "When this feature is selected in the tree, let the user browse to change THIS directory."
+        f.write(f'            <Feature Id="{feat_id}" Title="{data["title"]}" Level="1" ConfigurableDirectory="{data["config_dir"]}">\n')
         for comp_id in data["components"]:
             f.write(f'                <ComponentRef Id="{comp_id}" />\n')
         f.write(f'            </Feature>\n')
@@ -135,13 +140,14 @@ def main():
     if os.path.exists(dialog_bmp):
          f.write(f'        <WixVariable Id="WixUIDialogBmp" Value="{dialog_bmp}" />\n')
 
-    # WixUI_FeatureTree is the standard UI that supports feature selection (CustomizeDlg)
+    # WixUI_FeatureTree is the standard UI that allows detailed feature configuration.
+    # It includes the "CustomizeDlg" which respects the ConfigurableDirectory attribute we set above.
     f.write('        <UI>\n')
     f.write('            <ui:WixUI Id="WixUI_FeatureTree" />\n')
     f.write('            <UIRef Id="WixUI_ErrorProgressText" />\n')
 
     # --- Downgrade Warning Dialog ---
-    # Kept your custom downgrade warning logic
+    # (Same as before - strictly necessary to handle the "AllowDowngrades" logic gracefully)
     f.write('            <Dialog Id="DowngradeWarningDlg" Width="370" Height="270" Title="Downgrade Warning">\n')
     f.write('                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\\WixUI_Font_Title}Downgrade Detected" />\n')
     f.write('                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="A newer version of this product is already installed." />\n')
@@ -157,14 +163,10 @@ def main():
     f.write('                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />\n')
     f.write('            </Dialog>\n')
 
-    # --- UI Logic Injection ---
-    # We override the standard sequence to inject Downgrade detection.
-    # WixUI_FeatureTree starts with WelcomeDlg.
+    # --- UI Injection ---
+    # Inject Downgrade Warning into the start of the sequence
     f.write('            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="DowngradeWarningDlg" Order="1" Condition="DOWNGRADE_DETECTED" />\n')
     f.write('            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg" Order="2" Condition="NOT DOWNGRADE_DETECTED" />\n')
-    
-    # NOTE: In WixUI_FeatureTree, the standard flow is License -> CustomizeDlg -> VerifyReadyDlg
-    # We don't need to manually wire License -> PluginSelect -> VerifyReady anymore.
     
     f.write('        </UI>\n')
 
@@ -183,6 +185,7 @@ def main():
     print(f"Generated {outfile_path}")
 
 def write_dir_recursive(file_handle, current_os_path, parent_wix_id, component_list, prefix):
+    # (Unchanged)
     try:
         items = os.listdir(current_os_path)
     except OSError: return
