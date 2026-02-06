@@ -104,12 +104,12 @@ jobs:
         run: |
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
-      - name: Install WiX v5
+      - name: Install WiX v5 (Windows)
         if: ${{ runner.os == 'Windows' }}
         shell: bash
         run: dotnet tool install --global wix
 
-      - name: Add the WiX UI Extension
+      - name: Add the WiX UI Extension (Windows)
         if: ${{ runner.os == 'Windows' }}
         shell: bash
         run: wix extension add WixToolset.UI.wixext
